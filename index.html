@@ -1,291 +1,650 @@
-  <!-- Acciones de Cabecera -->
-  <div class="flex items-center gap-2">
-    <button id="btnExport" title="Exportar respaldo JSON local" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition">
-      <i data-lucide="download" class="w-4 h-4"></i>
-      <span class="hidden sm:inline">Exportar</span>
-    </button>
-    <label title="Importar respaldo JSON" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer transition">
-      <i data-lucide="upload" class="w-4 h-4"></i>
-      <span class="hidden sm:inline">Importar</span>
-      <input type="file" id="fileImport" accept=".json" class="hidden">
-    </label>
-    <button id="btnOpenNew" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition">
-      <i data-lucide="plus-circle" class="w-4 h-4"></i>
-      <span>Nuevo Producto</span>
-    </button>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catálogo E-commerce & Taller - Tinta Fuerte</title>
+  <style>
+    :root {
+      --bg-main: #f1f5f9;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --success: #10b981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
+    body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; padding: 24px 16px; }
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    /* Header */
+    header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .header-title h1 { font-size: 1.5rem; font-weight: 800; color: #1e293b; }
+    .header-title p { font-size: 0.85rem; color: var(--text-muted); margin-top: 2px; }
+    .actions-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+    
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; text-decoration: none; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-danger { background: #fee2e2; color: var(--danger); border-color: #fecaca; }
+    .btn-danger:hover { background: #fca5a5; color: #991b1b; }
+    .btn-secondary { background: #fff; color: #334155; border-color: var(--border-color); }
+    .btn-secondary:hover { background: #f8fafc; }
+    .btn-drive { background: #059669; color: #fff; }
+    .btn-drive:hover { background: #047857; }
+    .btn-sm { padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; }
+
+    /* Buscador */
+    .search-box { position: relative; margin-bottom: 24px; }
+    .search-input { width: 100%; padding: 12px 16px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #cbd5e1; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.05); outline: none; }
+    .search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+    .stats-info { font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; margin-left: 4px; }
+
+    /* Grid de Productos */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .card { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; transition: transform 0.15s, box-shadow 0.15s; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    
+    .card-img-wrap { position: relative; width: 100%; height: 180px; background: #f8fafc; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .card-img { width: 100%; height: 100%; object-fit: contain; }
+    .card-placeholder { font-size: 2.5rem; color: #cbd5e1; }
+    
+    .card-content { padding: 12px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+    .card-title { font-weight: 700; font-size: 0.95rem; line-height: 1.3; margin-bottom: 4px; color: #1e293b; cursor: pointer; }
+    .card-title:hover { color: var(--primary); }
+    
+    .sku-badge { display: inline-block; font-size: 0.7rem; font-family: monospace; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #475569; margin-bottom: 6px; width: fit-content; }
+    .sku-badge.highlight { background: #fef08a; color: #854d0e; border: 1px solid #facc15; }
+    
+    .card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
+    .tag { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #e2e8f0; color: #475569; }
+
+    /* Marketplaces y Botones */
+    .market-links { display: flex; gap: 6px; align-items: center; margin-bottom: 12px; }
+    .badge-market { font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; text-decoration: none; border: 1px solid #e2e8f0; }
+    .badge-market.ml { background: #fef08a; color: #854d0e; }
+    .badge-market.tiktok { background: #000; color: #fff; }
+    .badge-market.amazon { background: #ffedd5; color: #c2410c; }
+    .badge-market.disabled { background: #f8fafc; color: #cbd5e1; border-color: #f1f5f9; cursor: not-allowed; }
+
+    .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 8px; }
+    .clip-btn { font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 999px; cursor: pointer; border: none; }
+    .clip-btn.ok { background: #dcfce7; color: #15803d; }
+    .clip-btn.pending { background: #fee2e2; color: #b91c1c; }
+
+    /* Modales */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 100; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: #fff; border-radius: 12px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
+    .modal-header h3 { font-size: 1.15rem; font-weight: 700; }
+    .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #94a3b8; }
+    
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; color: #334155; }
+    .form-control { width: 100%; padding: 8px 10px; font-size: 0.85rem; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; }
+    .form-control:focus { border-color: var(--primary); }
+    .form-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    
+    /* Variantes en Modal */
+    .variant-row { display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 6px; }
+    .variant-row input { flex: 1; }
+    .variant-thumb { width: 36px; height: 36px; object-fit: contain; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; }
+
+    /* Lightbox Zoom */
+    .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 200; cursor: zoom-out; }
+    .lightbox.active { display: flex; }
+    .lightbox img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="header-title">
+      <h1>Catálogo E-commerce & Taller</h1>
+      <p>Gestión de SKUs, Variantes y Archivos de Producción en Drive</p>
+    </div>
+    <div class="actions-bar">
+      <button class="btn btn-primary" onclick="openCreateModal()">+ Nuevo Producto</button>
+    </div>
+  </header>
+
+  <div class="search-box">
+    <input type="text" id="searchInput" class="search-input" placeholder="Buscar por SKU (cualquier talla o color), nombre de diseño, prenda o modelo..." oninput="handleSearch()" />
+    <div class="stats-info" id="statsInfo">Cargando catálogo...</div>
   </div>
+
+  <div class="grid" id="productsGrid"></div>
 </div>
 
+<!-- MODAL CREAR / EDITAR PRODUCTO -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Nuevo Producto</h3>
+      <button class="close-btn" onclick="closeProductModal()">&times;</button>
+    </div>
+    <form id="productForm" onsubmit="saveProduct(event)">
+      <input type="hidden" id="editProductId" />
 
-<!-- Buscador Universal & Contadores -->
-<div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center justify-between">
-  <div class="relative w-full md:max-w-xl">
-    <i data-lucide="search" class="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-    <input 
-      type="text" 
-      id="searchInput" 
-      placeholder="Buscar por SKU (cualquier talla/color), nombre del diseño, marca o títulos..." 
-      class="w-full pl-11 pr-10 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-    >
-    <button id="btnClearSearch" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-      <i data-lucide="x" class="w-4 h-4"></i>
-    </button>
-  </div>
-  <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end text-xs text-slate-500 font-medium">
-    <span id="productCount" class="bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">0 productos</span>
-    <span id="skuCount" class="bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">0 SKUs registrados</span>
-  </div>
-</div>
-
-<!-- Rejilla de Productos -->
-<div id="productGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-  <!-- Generado dinámicamente -->
-</div>
-
-<!-- Estado vacío -->
-<div id="emptyState" class="hidden text-center py-20 px-4">
-  <div class="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-400">
-    <i data-lucide="package-x" class="w-8 h-8"></i>
-  </div>
-  <h3 class="text-base font-semibold text-slate-800">No se encontraron productos</h3>
-  <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Revisa el término de búsqueda o agrega un nuevo producto con el botón superior.</p>
-</div>
-
-
-  <form id="productForm" class="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
-    <input type="hidden" id="formProductId">
-
-    <!-- Información Básica -->
-    <div class="space-y-4">
-      <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Información Básica</h3>
-      
-      <div>
-        <label class="block font-medium text-slate-700 mb-1">Nombre Comercial del Producto / Diseño *</label>
-        <input type="text" id="formName" required placeholder="Ej: Playera Newjeans Hyein Bunnies o Gorra Mac Miller" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+      <div class="form-group">
+        <label>Nombre Comercial / Diseño *</label>
+        <input type="text" id="pName" class="form-control" required placeholder="Ej. Playera Newjeans Hyein Bunnies" />
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">Marca de la prenda</label>
-          <input type="text" id="formBrand" placeholder="Ej: Optima / Basic Cap / Explosion" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Marca</label>
+          <input type="text" id="pBrand" class="form-control" placeholder="Optima / Basic Cap" />
         </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">Modelo base</label>
-          <input type="text" id="formModel" placeholder="Ej: Algodón Peinado / 5001 / Bazuka" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        <div class="form-group">
+          <label>Modelo</label>
+          <input type="text" id="pModel" class="form-control" placeholder="Peinado / 5001" />
         </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">Color base</label>
-          <input type="text" id="formColor" placeholder="Ej: Negra / Blanca / Durazno" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        <div class="form-group">
+          <label>Color</label>
+          <input type="text" id="pColor" class="form-control" placeholder="Negra / Beige" />
         </div>
       </div>
 
-      <!-- Imagen Principal -->
-      <div class="space-y-2">
-        <label class="block font-medium text-slate-700">Foto Principal del Diseño</label>
-        <div class="flex items-center gap-3">
-          <input type="text" id="formImageUrl" placeholder="Pega el enlace web de la foto o sube un archivo..." class="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="updateFormPreview(this.value)">
-          <span class="text-slate-400">o</span>
-          <label class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg cursor-pointer transition flex items-center gap-1.5 flex-shrink-0">
-            <i data-lucide="image" class="w-4 h-4 text-slate-600"></i>
-            <span>Subir archivo</span>
-            <input type="file" id="formImageFile" accept="image/*" class="hidden" onchange="handleImageFileUpload(event, 'formImageUrl')">
+      <div class="form-group">
+        <label>Foto Principal (Diseño General)</label>
+        <div style="display: flex; gap: 6px;">
+          <input type="text" id="pImage" class="form-control" placeholder="URL de la imagen..." oninput="previewMainImg()" />
+          <input type="file" id="pImageFile" accept="image/*" style="display:none;" onchange="handleMainFile(this)" />
+          <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('pImageFile').click()">Subir</button>
+        </div>
+        <img id="mainImgPreview" src="" style="width: 50px; height: 50px; object-fit: contain; margin-top: 6px; display: none; border-radius: 4px; border: 1px solid #cbd5e1;" />
+      </div>
+
+      <div class="form-group">
+        <label>Enlace de Google Drive (Archivos de Impresión / DTF / Parche)</label>
+        <input type="url" id="pDrive" class="form-control" placeholder="https://drive.google.com/..." />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Mercado Libre URL</label>
+          <input type="url" id="pMl" class="form-control" placeholder="https://..." />
+        </div>
+        <div class="form-group">
+          <label>TikTok Shop URL</label>
+          <input type="url" id="pTiktok" class="form-control" placeholder="https://..." />
+        </div>
+        <div class="form-group">
+          <label>Amazon URL</label>
+          <input type="url" id="pAmazon" class="form-control" placeholder="https://..." />
+        </div>
+      </div>
+
+      <!-- SECCIÓN ESTRUCTURA DE SKUS -->
+      <div style="border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <label style="font-weight: 700; font-size: 0.85rem; cursor: pointer;">
+            <input type="checkbox" id="pHasVariants" onchange="toggleVariantMode()" checked /> ¿Tiene variantes (tallas o colores)?
           </label>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnCopyImg" onclick="copyMainImageToVariants()">Copiar foto principal a variantes</button>
         </div>
-        <div id="formImagePreviewContainer" class="hidden flex items-center gap-3 p-2 bg-slate-50 border border-slate-200 rounded-lg">
-          <img id="formImagePreview" src="" alt="Previa" class="w-12 h-12 object-cover rounded-md border border-slate-200">
-          <span class="text-[11px] text-slate-500">Vista previa cargada</span>
+
+        <!-- Campo si es producto único -->
+        <div id="singleSkuWrap" style="display: none;" class="form-group">
+          <label>SKU Único del Producto *</label>
+          <input type="text" id="pSingleSku" class="form-control" placeholder="Ej. G-MACC-01" />
         </div>
-      </div>
-    </div>
 
-    <!-- Enlaces a Drive y Marketplaces -->
-    <div class="space-y-4 pt-2 border-t border-slate-100">
-      <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Enlaces & Taller</h3>
-
-      <div>
-        <label class="block font-medium text-slate-700 mb-1">Enlace a Google Drive (Archivos de Impresión / DTF / Parche)</label>
-        <div class="relative">
-          <i data-lucide="folder" class="w-4 h-4 text-emerald-600 absolute left-3 top-1/2 -translate-y-1/2"></i>
-          <input type="url" id="formDriveUrl" placeholder="https://drive.google.com/..." class="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        <!-- Lista de Variantes -->
+        <div id="variantsWrap">
+          <div id="variantList"></div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="addVariantRow()" style="margin-top: 6px;">+ Agregar Variante</button>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">Enlace Mercado Libre</label>
-          <input type="url" id="formUrlMl" placeholder="https://articulo.mercadolibre..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-        </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">Enlace TikTok Shop</label>
-          <input type="url" id="formUrlTiktok" placeholder="https://shop.tiktok..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-        </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">Enlace Amazon</label>
-          <input type="url" id="formUrlAmazon" placeholder="https://amazon..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-        </div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+        <button type="button" class="btn btn-secondary" onclick="closeProductModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar Producto</button>
       </div>
-    </div>
-
-    <!-- Variaciones de Títulos Ocultos para Búsqueda -->
-    <div class="space-y-3 pt-2 border-t border-slate-100">
-      <button type="button" onclick="toggleExtraTitles()" class="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1">
-        <span id="titlesToggleText">+ Agregar títulos alternativos por plataforma (opcional)</span>
-      </button>
-      <div id="extraTitlesContainer" class="hidden space-y-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
-        <div>
-          <label class="block font-medium text-slate-600 mb-0.5">Título en Mercado Libre</label>
-          <input type="text" id="formTitleMl" placeholder="Título exacto en ML..." class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg">
-        </div>
-        <div>
-          <label class="block font-medium text-slate-600 mb-0.5">Título en TikTok Shop</label>
-          <input type="text" id="formTitleTiktok" placeholder="Título exacto en TikTok..." class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg">
-        </div>
-        <div>
-          <label class="block font-medium text-slate-600 mb-0.5">Título en Amazon</label>
-          <input type="text" id="formTitleAmazon" placeholder="Título exacto en Amazon..." class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg">
-        </div>
-      </div>
-    </div>
-
-    <!-- Estructura de SKUs -->
-    <div class="space-y-4 pt-2 border-t border-slate-100">
-      <div class="flex items-center justify-between">
-        <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Estructura de SKUs</h3>
-        <label class="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" id="formHasVariants" class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" onchange="toggleVariantMode()">
-          <span class="font-medium text-slate-700">¿Tiene variantes (tallas o colores)?</span>
-        </label>
-      </div>
-
-      <!-- MODO 1: Producto Único (1 SKU directo) -->
-      <div id="singleSkuSection" class="space-y-2">
-        <label class="block font-medium text-slate-700">SKU Único del Producto *</label>
-        <input type="text" id="formSingleSku" placeholder="Ej: 1J-6EIQ-3CLV" class="w-full px-3 py-2 text-sm uppercase font-mono border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="checkSingleSkuDuplicate(this.value)">
-        <p id="singleSkuError" class="hidden text-xs text-rose-600 font-medium flex items-center gap-1">
-          <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> <span>¡Este SKU ya existe en otro producto o variante!</span>
-        </p>
-      </div>
-
-      <!-- MODO 2: Variantes (Hijos con SKU obligatorio; el Padre no lleva) -->
-      <div id="variantsSection" class="hidden space-y-3">
-        <div class="flex items-center justify-between">
-          <p class="text-slate-500 text-[11px]">Cada talla o color lleva su SKU físico. El diseño principal no lleva SKU ficticio.</p>
-          <button type="button" onclick="copyMainImageToVariants()" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-[11px] transition">
-            Copiar foto principal a variantes
-          </button>
-        </div>
-
-        <div id="variantsList" class="space-y-3">
-          <!-- Filas de variantes con subida de archivo y URL -->
-        </div>
-
-        <button type="button" onclick="addVariantRow()" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-semibold">
-          <i data-lucide="plus" class="w-3.5 h-3.5"></i> Agregar variante (talla o color)
-        </button>
-      </div>
-    </div>
-
-    <div id="formGeneralError" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs font-medium"></div>
-
-    <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
-      <button type="button" id="btnDeleteFromForm" onclick="deleteCurrentProductFromForm()" class="hidden text-rose-600 hover:text-rose-800 text-xs font-semibold flex items-center gap-1 px-3 py-2 rounded-lg hover:bg-rose-50 transition">
-        <i data-lucide="trash-2" class="w-4 h-4"></i>
-        <span>Eliminar producto</span>
-      </button>
-      <div class="flex items-center gap-2 ml-auto">
-        <button type="button" onclick="closeModalForm()" class="px-4 py-2 border border-slate-200 text-slate-600 font-medium rounded-lg hover:bg-slate-50 transition">Cancelar</button>
-        <button type="submit" id="btnSubmitForm" class="px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 shadow-sm transition">Guardar Producto</button>
-      </div>
-    </div>
-  </form>
+    </form>
+  </div>
 </div>
 
-
-  <div class="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
-    <!-- Encabezado con Foto y Especificaciones -->
-    <div class="flex flex-col sm:flex-row gap-5 items-start">
-      <div class="relative group cursor-pointer w-full sm:w-40 h-40 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 flex-shrink-0" onclick="openLightboxFromDetail()">
-        <img id="detailImage" src="" alt="" class="w-full h-full object-cover">
-        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition">
-          <i data-lucide="maximize-2" class="w-6 h-6 mb-1"></i>
-          <span class="text-[10px] font-medium">Ver en grande</span>
-        </div>
-      </div>
-
-      <div class="space-y-3 flex-1 w-full">
-        <div>
-          <h3 id="detailName" class="text-base font-bold text-slate-900"></h3>
-          <p id="detailMatchBadge" class="hidden mt-1 inline-block px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-semibold text-[11px]"></p>
-        </div>
-
-        <div class="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-center">
-          <div>
-            <span class="text-slate-400 text-[10px] block">Marca</span>
-            <span id="detailBrand" class="font-semibold text-slate-700">-</span>
-          </div>
-          <div>
-            <span class="text-slate-400 text-[10px] block">Modelo</span>
-            <span id="detailModel" class="font-semibold text-slate-700">-</span>
-          </div>
-          <div>
-            <span class="text-slate-400 text-[10px] block">Color Base</span>
-            <span id="detailColor" class="font-semibold text-slate-700">-</span>
-          </div>
-        </div>
-
-        <!-- Botón de Drive para Producción -->
-        <div id="detailDriveContainer">
-          <a id="detailDriveBtn" href="#" target="_blank" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-sm transition">
-            <i data-lucide="folder" class="w-4 h-4"></i>
-            <span>Abrir diseño en Google Drive</span>
-          </a>
-          <p id="detailDriveMissing" class="hidden text-slate-400 text-[11px] italic text-center">Sin enlace a Google Drive asignado</p>
-        </div>
-      </div>
+<!-- MODAL FICHA DE DETALLE -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal" style="max-width: 550px;">
+    <div class="modal-header">
+      <h3 id="detName">Ficha de Producto</h3>
+      <button class="close-btn" onclick="closeDetailModal()">&times;</button>
+    </div>
+    
+    <div style="text-align: center; margin-bottom: 12px;">
+      <img id="detImg" src="" style="max-height: 220px; max-width: 100%; object-fit: contain; cursor: zoom-in; border-radius: 8px; border: 1px solid #e2e8f0;" onclick="zoomImage(this.src)" />
+      <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px;">Clic en la foto para ver en pantalla completa</div>
     </div>
 
-    <!-- Botones a Marketplaces -->
-    <div>
-      <h4 class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Publicaciones en Tiendas</h4>
-      <div class="flex flex-wrap gap-2" id="detailMarketplaceLinks">
-        <!-- Botones generados -->
-      </div>
+    <div style="display: flex; gap: 6px; justify-content: center; margin-bottom: 12px;" id="detSpecs"></div>
+
+    <div style="margin-bottom: 16px;">
+      <a id="detDriveBtn" href="#" target="_blank" class="btn btn-drive" style="width: 100%; justify-content: center; display: none;">
+        📁 Abrir Diseño en Google Drive
+      </a>
+      <div id="detNoDrive" style="font-size: 0.8rem; color: #94a3b8; text-align: center; display: none;">Sin enlace de Drive registrado</div>
     </div>
 
-    <!-- Tabla de Variantes & SKUs -->
-    <div>
-      <h4 class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Variantes & SKUs de Inventario</h4>
-      <div id="detailVariantsContainer" class="border border-slate-200 rounded-xl overflow-hidden">
-        <!-- Filas de variantes con foto individual -->
-      </div>
+    <div style="border-top: 1px solid #f1f5f9; padding-top: 12px;">
+      <h4 style="font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: #475569;">Variantes & SKUs Físicos:</h4>
+      <div id="detVariantsList"></div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+      <button type="button" id="detDeleteBtn" class="btn btn-danger btn-sm">Eliminar Producto</button>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="closeDetailModal()">Cerrar</button>
     </div>
   </div>
 </div>
 
-
-  <form id="linksForm" class="p-5 space-y-4 text-xs">
-    <input type="hidden" id="quickLinksProductId">
-
-    <div>
-      <label class="block font-medium text-slate-700 mb-1">Google Drive (Archivo de impresión)</label>
-      <input type="url" id="quickLinkDrive" placeholder="https://drive.google.com/..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-    </div>
-    <div>
-      <label class="block font-medium text-slate-700 mb-1">Mercado Libre</label>
-      <input type="url" id="quickLinkMl" placeholder="https://articulo.mercadolibre..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-    </div>
-    <div>
-      <label class="block font-medium text-slate-700 mb-1">TikTok Shop</label>
-      <input type="url" id="quickLinkTiktok" placeholder="https://shop.tiktok..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-    </div>
-    <div>
-      <label class="block font-medium text-slate-700 mb-1">Amazon</label>
-      <input type="url" id="quickLinkAmazon" placeholder="https://amazon..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-    </div>
-
-    <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
-      <button type="button" onclick="closeModalLinks()" class="px-4 py-2 border border-slate-200 text-slate-600 font-medium rounded-lg hover:bg-slate-50 transition">Cancelar</button>
-      <button type="submit" class="px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 shadow-sm transition">Guardar Enlaces</button>
-    </div>
-  </form>
+<!-- LIGHTBOX ZOOM -->
+<div class="lightbox" id="lightbox" onclick="closeZoom()">
+  <img id="lightboxImg" src="" />
 </div>
+
+<!-- SCRIPTS: FIREBASE SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // TUS CREDENCIALES EXACTAS DE FIREBASE
+  const firebaseConfig = {
+    apiKey: "AIzaSyDQFTKmitbswMdiUtcPRMouiNMU7BdkULw",
+    authDomain: "ecommercetintafuertecatalogo.firebaseapp.com",
+    projectId: "ecommercetintafuertecatalogo",
+    storageBucket: "ecommercetintafuertecatalogo.firebasestorage.app",
+    messagingSenderId: "745349091248",
+    appId: "1:745349091248:web:461151febc5b8c16da5075"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const colRef = collection(db, "productos");
+
+  let products = [];
+  let currentSearch = "";
+
+  // Escuchar cambios en Firestore en tiempo real
+  onSnapshot(colRef, (snapshot) => {
+    products = [];
+    snapshot.forEach(docSnap => {
+      products.push({ id: docSnap.id, ...docSnap.data() });
+    });
+    renderCatalog();
+  });
+
+  // Renderizar catálogo
+  window.renderCatalog = function() {
+    const grid = document.getElementById("productsGrid");
+    const q = currentSearch.toLowerCase().trim();
+
+    let totalSkus = 0;
+    products.forEach(p => {
+      if (p.hasVariants && p.variants) totalSkus += p.variants.length;
+      else if (p.singleSku) totalSkus += 1;
+    });
+
+    document.getElementById("statsInfo").innerText = `${products.length} productos | ${totalSkus} SKUs registrados`;
+
+    const filtered = products.filter(p => {
+      if (!q) return true;
+      const matchParent = (p.name || '').toLowerCase().includes(q) ||
+                          (p.brand || '').toLowerCase().includes(q) ||
+                          (p.model || '').toLowerCase().includes(q) ||
+                          (p.singleSku || '').toLowerCase().includes(q);
+      const matchVariant = p.variants?.some(v => 
+        (v.name || '').toLowerCase().includes(q) || 
+        (v.sku || '').toLowerCase().includes(q)
+      );
+      return matchParent || matchVariant;
+    });
+
+    if (filtered.length === 0) {
+      grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #94a3b8;">No se encontraron productos coincidentes.</div>`;
+      return;
+    }
+
+    grid.innerHTML = filtered.map(p => {
+      // Detección de SKU coincidente en búsqueda
+      let matchInfo = '';
+      let displayImg = p.image || '';
+
+      if (q && p.variants) {
+        const foundVar = p.variants.find(v => (v.sku || '').toLowerCase().includes(q) || (v.name || '').toLowerCase().includes(q));
+        if (foundVar) {
+          matchInfo = `<div class="sku-badge highlight">Coincidencia: ${foundVar.name} (${foundVar.sku})</div>`;
+          if (foundVar.image) displayImg = foundVar.image;
+        }
+      }
+
+      const imgHtml = displayImg 
+        ? `<img src="${displayImg}" class="card-img" />`
+        : `<div class="card-placeholder">👕</div>`;
+
+      const skuDisplay = p.hasVariants 
+        ? `<div class="sku-badge">${p.variants ? p.variants.length : 0} variantes</div>`
+        : `<div class="sku-badge">${p.singleSku || 'Sin SKU'}</div>`;
+
+      return `
+        <div class="card">
+          <div class="card-img-wrap" onclick="openDetailModal('${p.id}')">
+            ${imgHtml}
+          </div>
+          <div class="card-content">
+            <div>
+              ${matchInfo || skuDisplay}
+              <div class="card-title" onclick="openDetailModal('${p.id}')">${p.name}</div>
+              <div class="card-tags">
+                ${p.brand ? `<span class="tag">${p.brand}</span>` : ''}
+                ${p.model ? `<span class="tag">${p.model}</span>` : ''}
+                ${p.color ? `<span class="tag">${p.color}</span>` : ''}
+              </div>
+            </div>
+
+            <div>
+              <div class="market-links">
+                <a href="${p.ml || '#'}" target="_blank" class="badge-market ml ${!p.ml ? 'disabled' : ''}">ML</a>
+                <a href="${p.tiktok || '#'}" target="_blank" class="badge-market tiktok ${!p.tiktok ? 'disabled' : ''}">TikTok</a>
+                <a href="${p.amazon || '#'}" target="_blank" class="badge-market amazon ${!p.amazon ? 'disabled' : ''}">Amazon</a>
+              </div>
+
+              <div class="card-footer">
+                <button class="clip-btn ${p.hasClip ? 'ok' : 'pending'}" onclick="toggleClip('${p.id}')">
+                  ${p.hasClip ? '✓ Clip OK' : '○ Clip Pendiente'}
+                </button>
+                <div style="display: flex; gap: 4px;">
+                  <button class="btn btn-secondary btn-sm" onclick="openEditModal('${p.id}')">Editar</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">🗑</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  };
+
+  window.handleSearch = function() {
+    currentSearch = document.getElementById("searchInput").value;
+    renderCatalog();
+  };
+
+  // Toggle Clip
+  window.toggleClip = async function(id) {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+    await setDoc(doc(db, "productos", id), { ...p, hasClip: !p.hasClip });
+  };
+
+  // Eliminar Producto
+  window.deleteProduct = async function(id) {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+    if (confirm(`¿Estás seguro de eliminar "${p.name}" por completo? Esta acción no se puede deshacer.`)) {
+      await deleteDoc(doc(db, "productos", id));
+      closeDetailModal();
+    }
+  };
+
+  // Guardar (Crear o Editar)
+  window.saveProduct = async function(e) {
+    e.preventDefault();
+    const id = document.getElementById("editProductId").value || Date.now().toString();
+    const hasVariants = document.getElementById("pHasVariants").checked;
+
+    let variants = [];
+    let singleSku = "";
+
+    if (hasVariants) {
+      const rows = document.querySelectorAll("#variantList .variant-row");
+      rows.forEach(r => {
+        variants.push({
+          name: r.querySelector(".v-name").value.trim(),
+          sku: r.querySelector(".v-sku").value.trim(),
+          image: r.querySelector(".v-img").value.trim()
+        });
+      });
+    } else {
+      singleSku = document.getElementById("pSingleSku").value.trim();
+    }
+
+    const data = {
+      name: document.getElementById("pName").value.trim(),
+      brand: document.getElementById("pBrand").value.trim(),
+      model: document.getElementById("pModel").value.trim(),
+      color: document.getElementById("pColor").value.trim(),
+      image: document.getElementById("pImage").value.trim(),
+      driveUrl: document.getElementById("pDrive").value.trim(),
+      ml: document.getElementById("pMl").value.trim(),
+      tiktok: document.getElementById("pTiktok").value.trim(),
+      amazon: document.getElementById("pAmazon").value.trim(),
+      hasVariants: hasVariants,
+      singleSku: singleSku,
+      variants: variants,
+      hasClip: false
+    };
+
+    // Si ya existía, mantener su estado de clip
+    const existing = products.find(x => x.id === id);
+    if (existing) data.hasClip = existing.hasClip || false;
+
+    await setDoc(doc(db, "productos", id), data);
+    closeProductModal();
+  };
+
+  // Formularios y Modales
+  window.openCreateModal = function() {
+    document.getElementById("modalTitle").innerText = "Nuevo Producto";
+    document.getElementById("editProductId").value = "";
+    document.getElementById("productForm").reset();
+    document.getElementById("mainImgPreview").style.display = "none";
+    document.getElementById("variantList").innerHTML = "";
+    document.getElementById("pHasVariants").checked = true;
+    toggleVariantMode();
+
+    // Variantes por defecto para agilizar playeras
+    addVariantRow("CH", "");
+    addVariantRow("M", "");
+    addVariantRow("G", "");
+    addVariantRow("EG", "");
+
+    document.getElementById("productModal").classList.add("active");
+  };
+
+  window.openEditModal = function(id) {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+
+    document.getElementById("modalTitle").innerText = "Editar Producto";
+    document.getElementById("editProductId").value = p.id;
+    document.getElementById("pName").value = p.name || "";
+    document.getElementById("pBrand").value = p.brand || "";
+    document.getElementById("pModel").value = p.model || "";
+    document.getElementById("pColor").value = p.color || "";
+    document.getElementById("pImage").value = p.image || "";
+    document.getElementById("pDrive").value = p.driveUrl || "";
+    document.getElementById("pMl").value = p.ml || "";
+    document.getElementById("pTiktok").value = p.tiktok || "";
+    document.getElementById("pAmazon").value = p.amazon || "";
+
+    previewMainImg();
+
+    document.getElementById("pHasVariants").checked = p.hasVariants;
+    toggleVariantMode();
+
+    if (!p.hasVariants) {
+      document.getElementById("pSingleSku").value = p.singleSku || "";
+    } else {
+      document.getElementById("variantList").innerHTML = "";
+      if (p.variants && p.variants.length > 0) {
+        p.variants.forEach(v => addVariantRow(v.name, v.sku, v.image));
+      }
+    }
+
+    document.getElementById("productModal").classList.add("active");
+  };
+
+  window.closeProductModal = function() {
+    document.getElementById("productModal").classList.remove("active");
+  };
+
+  window.toggleVariantMode = function() {
+    const hasVariants = document.getElementById("pHasVariants").checked;
+    document.getElementById("singleSkuWrap").style.display = hasVariants ? "none" : "block";
+    document.getElementById("variantsWrap").style.display = hasVariants ? "block" : "none";
+    document.getElementById("btnCopyImg").style.display = hasVariants ? "inline-block" : "none";
+  };
+
+  window.addVariantRow = function(name = "", sku = "", image = "") {
+    const div = document.createElement("div");
+    div.className = "variant-row";
+    div.innerHTML = `
+      <input type="text" class="form-control v-name" placeholder="Talla o Color" value="${name}" style="flex: 0.8;" required />
+      <input type="text" class="form-control v-sku" placeholder="SKU Físico" value="${sku}" style="flex: 1.2;" required />
+      <input type="text" class="form-control v-img" placeholder="URL Foto (opcional)" value="${image}" oninput="updateVarThumb(this)" />
+      <input type="file" accept="image/*" style="display:none;" onchange="handleVarFile(this)" />
+      <button type="button" class="btn btn-secondary btn-sm" onclick="this.previousElementSibling.click()">Subir</button>
+      <img src="${image}" class="variant-thumb" style="${image ? '' : 'display:none;'}" onclick="zoomImage(this.src)" />
+      <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>
+    `;
+    document.getElementById("variantList").appendChild(div);
+  };
+
+  window.updateVarThumb = function(input) {
+    const thumb = input.parentElement.querySelector(".variant-thumb");
+    if (input.value.trim()) {
+      thumb.src = input.value.trim();
+      thumb.style.display = "block";
+    } else {
+      thumb.style.display = "none";
+    }
+  };
+
+  window.handleVarFile = function(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const row = input.parentElement;
+      row.querySelector(".v-img").value = e.target.result;
+      const thumb = row.querySelector(".variant-thumb");
+      thumb.src = e.target.result;
+      thumb.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.previewMainImg = function() {
+    const val = document.getElementById("pImage").value.trim();
+    const prev = document.getElementById("mainImgPreview");
+    if (val) {
+      prev.src = val;
+      prev.style.display = "block";
+    } else {
+      prev.style.display = "none";
+    }
+  };
+
+  window.handleMainFile = function(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById("pImage").value = e.target.result;
+      previewMainImg();
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.copyMainImageToVariants = function() {
+    const mainImg = document.getElementById("pImage").value.trim();
+    if (!mainImg) {
+      alert("Primero asigna o sube una imagen principal.");
+      return;
+    }
+    const rows = document.querySelectorAll("#variantList .variant-row");
+    rows.forEach(r => {
+      r.querySelector(".v-img").value = mainImg;
+      const thumb = r.querySelector(".variant-thumb");
+      thumb.src = mainImg;
+      thumb.style.display = "block";
+    });
+  };
+
+  // Detalle Modal
+  window.openDetailModal = function(id) {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+
+    document.getElementById("detName").innerText = p.name;
+    document.getElementById("detImg").src = p.image || "https://via.placeholder.com/400x300?text=Sin+Foto";
+
+    document.getElementById("detSpecs").innerHTML = `
+      ${p.brand ? `<span class="tag">${p.brand}</span>` : ''}
+      ${p.model ? `<span class="tag">${p.model}</span>` : ''}
+      ${p.color ? `<span class="tag">${p.color}</span>` : ''}
+    `;
+
+    const driveBtn = document.getElementById("detDriveBtn");
+    const noDrive = document.getElementById("detNoDrive");
+    if (p.driveUrl) {
+      driveBtn.href = p.driveUrl;
+      driveBtn.style.display = "flex";
+      noDrive.style.display = "none";
+    } else {
+      driveBtn.style.display = "none";
+      noDrive.style.display = "block";
+    }
+
+    const varList = document.getElementById("detVariantsList");
+    if (p.hasVariants && p.variants && p.variants.length > 0) {
+      varList.innerHTML = p.variants.map(v => `
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-bottom: 1px solid #f1f5f9;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            ${v.image ? `<img src="${v.image}" style="width: 32px; height: 32px; object-fit: contain; border-radius: 4px; cursor: pointer;" onclick="zoomImage('${v.image}')" />` : ''}
+            <span style="font-size: 0.85rem; font-weight: 600;">${v.name}</span>
+          </div>
+          <span class="sku-badge">${v.sku}</span>
+        </div>
+      `).join("");
+    } else {
+      varList.innerHTML = `
+        <div style="display: flex; justify-content: space-between; padding: 6px 8px;">
+          <span style="font-size: 0.85rem; color: #64748b;">Producto Único</span>
+          <span class="sku-badge">${p.singleSku || 'Sin SKU'}</span>
+        </div>
+      `;
+    }
+
+    document.getElementById("detDeleteBtn").onclick = () => deleteProduct(p.id);
+    document.getElementById("detailModal").classList.add("active");
+  };
+
+  window.closeDetailModal = function() {
+    document.getElementById("detailModal").classList.remove("active");
+  };
+
+  // Zoom Lightbox
+  window.zoomImage = function(src) {
+    if (!src) return;
+    document.getElementById("lightboxImg").src = src;
+    document.getElementById("lightbox").classList.add("active");
+  };
+
+  window.closeZoom = function() {
+    document.getElementById("lightbox").classList.remove("active");
+  };
+</script>
+
+</body>
+</html>
