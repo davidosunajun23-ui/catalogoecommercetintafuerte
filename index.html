@@ -4,259 +4,201 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Catálogo E-commerce & Taller - Tinta Fuerte</title>
-  <style>
-    :root {
-      --bg-main: #f1f5f9;
-      --card-bg: #ffffff;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      --border-color: #e2e8f0;
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --danger: #ef4444;
-      --danger-hover: #dc2626;
-      --success: #10b981;
+  <!-- Tailwind CSS desde CDN confiable para el diseño estilizado original -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#eff6ff', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' }
+          }
+        }
+      }
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
-    body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; padding: 24px 16px; }
-    .container { max-width: 1200px; margin: 0 auto; }
-
-    /* Header */
-    header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; }
-    .header-title h1 { font-size: 1.5rem; font-weight: 800; color: #1e293b; }
-    .header-title p { font-size: 0.85rem; color: var(--text-muted); margin-top: 2px; }
-    .actions-bar { display: flex; gap: 8px; flex-wrap: wrap; }
-    
-    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; text-decoration: none; }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:hover { background: var(--primary-hover); }
-    .btn-primary:disabled { background: #94a3b8; cursor: wait; }
-    .btn-danger { background: #fee2e2; color: var(--danger); border-color: #fecaca; }
-    .btn-danger:hover { background: #fca5a5; color: #991b1b; }
-    .btn-secondary { background: #fff; color: #334155; border-color: var(--border-color); }
-    .btn-secondary:hover { background: #f8fafc; }
-    .btn-drive { background: #059669; color: #fff; }
-    .btn-drive:hover { background: #047857; }
-    .btn-sm { padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; }
-
-    /* Buscador */
-    .search-box { position: relative; margin-bottom: 24px; }
-    .search-input { width: 100%; padding: 12px 16px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #cbd5e1; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.05); outline: none; }
-    .search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
-    .stats-info { font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; margin-left: 4px; }
-
-    /* Grid de Productos */
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-    .card { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; transition: transform 0.15s, box-shadow 0.15s; }
-    .card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-    
-    .card-img-wrap { position: relative; width: 100%; height: 180px; background: #f8fafc; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-    .card-img { width: 100%; height: 100%; object-fit: contain; }
-    .card-placeholder { font-size: 2.5rem; color: #cbd5e1; }
-    
-    .card-content { padding: 12px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-    .card-title { font-weight: 700; font-size: 0.95rem; line-height: 1.3; margin-bottom: 4px; color: #1e293b; cursor: pointer; }
-    .card-title:hover { color: var(--primary); }
-    
-    .sku-badge { display: inline-block; font-size: 0.7rem; font-family: monospace; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #475569; margin-bottom: 6px; width: fit-content; }
-    .sku-badge.highlight { background: #fef08a; color: #854d0e; border: 1px solid #facc15; }
-    
-    .card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
-    .tag { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #e2e8f0; color: #475569; }
-
-    /* Marketplaces y Botones */
-    .market-links { display: flex; gap: 6px; align-items: center; margin-bottom: 12px; }
-    .badge-market { font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; text-decoration: none; border: 1px solid #e2e8f0; }
-    .badge-market.ml { background: #fef08a; color: #854d0e; }
-    .badge-market.tiktok { background: #000; color: #fff; }
-    .badge-market.amazon { background: #ffedd5; color: #c2410c; }
-    .badge-market.disabled { background: #f8fafc; color: #cbd5e1; border-color: #f1f5f9; cursor: not-allowed; }
-
-    .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 8px; }
-    .clip-btn { font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 999px; cursor: pointer; border: none; }
-    .clip-btn.ok { background: #dcfce7; color: #15803d; }
-    .clip-btn.pending { background: #fee2e2; color: #b91c1c; }
-
-    /* Modales */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 100; }
-    .modal-overlay.active { display: flex; }
-    .modal { background: #fff; border-radius: 12px; width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto; padding: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
-    .modal-header h3 { font-size: 1.15rem; font-weight: 700; }
-    .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #94a3b8; }
-    
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; color: #334155; }
-    .form-control { width: 100%; padding: 8px 10px; font-size: 0.85rem; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; }
-    .form-control:focus { border-color: var(--primary); }
-    .form-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    
-    /* Variantes en Modal */
-    .variant-row { display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 6px; }
-    .variant-thumb-wrap { position: relative; display: inline-flex; align-items: center; }
-    .variant-thumb { width: 36px; height: 36px; object-fit: contain; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; }
-    .btn-clear-photo { background: #ef4444; color: white; border-radius: 999px; width: 16px; height: 16px; font-size: 10px; border: none; display: flex; align-items: center; justify-content: center; position: absolute; top: -5px; right: -5px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
-    .btn-clear-photo:hover { background: #dc2626; }
-
-    /* Lightbox Zoom */
-    .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 200; cursor: zoom-out; }
-    .lightbox.active { display: flex; }
-    .lightbox img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; }
+  </script>
+  <style>
+    .variant-thumb-container { position: relative; display: inline-flex; align-items: center; }
+    .btn-remove-thumb {
+      position: absolute; -top: 6px; -right: 6px;
+      background: #ef4444; color: white; border-radius: 9999px;
+      width: 16px; height: 16px; font-size: 10px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .btn-remove-thumb:hover { background: #dc2626; }
   </style>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 min-h-screen p-4 md:p-8">
 
-<div class="container">
-  <header>
-    <div class="header-title">
-      <h1>Catálogo E-commerce & Taller</h1>
-      <p>Gestión de SKUs, Variantes y Archivos de Producción en Drive</p>
+<div class="max-w-7xl mx-auto">
+  <!-- ENCABEZADO -->
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-black text-slate-900 tracking-tight">Catálogo E-commerce & Taller</h1>
+      <p class="text-sm text-slate-500">Gestión de SKUs, Tallas, Colores y Archivos de Impresión en Drive</p>
     </div>
-    <div class="actions-bar">
-      <button class="btn btn-primary" onclick="openCreateModal()">+ Nuevo Producto</button>
+    <div class="flex items-center gap-3">
+      <button onclick="openCreateModal()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition">
+        <span>+</span> Nuevo Producto
+      </button>
     </div>
   </header>
 
-  <div class="search-box">
-    <input type="text" id="searchInput" class="search-input" placeholder="Buscar por SKU (cualquier talla o color), nombre de diseño, prenda o modelo..." oninput="handleSearch()" />
-    <div class="stats-info" id="statsInfo">Cargando catálogo...</div>
+  <!-- BUSCADOR -->
+  <div class="mb-6">
+    <div class="relative">
+      <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Buscar por SKU (cualquier talla o color), nombre de diseño, prenda o modelo..." class="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" />
+    </div>
+    <div id="statsInfo" class="text-xs text-slate-500 mt-2 px-1 font-medium">Cargando catálogo...</div>
   </div>
 
-  <div class="grid" id="productsGrid"></div>
+  <!-- GRID DE PRODUCTOS -->
+  <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"></div>
 </div>
 
 <!-- MODAL CREAR / EDITAR PRODUCTO -->
-<div class="modal-overlay" id="productModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 id="modalTitle">Nuevo Producto</h3>
-      <button class="close-btn" onclick="closeProductModal()">&times;</button>
+<div id="productModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4 overflow-y-auto">
+  <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+      <h3 id="modalTitle" class="text-lg font-bold text-slate-900">Nuevo Producto</h3>
+      <button onclick="closeProductModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
     </div>
-    <form id="productForm" onsubmit="saveProduct(event)">
+
+    <form id="productForm" onsubmit="saveProduct(event)" class="space-y-4">
       <input type="hidden" id="editProductId" />
 
-      <div class="form-group">
-        <label>Nombre Comercial / Diseño *</label>
-        <input type="text" id="pName" class="form-control" required placeholder="Ej. Playera Newjeans Hyein Bunnies" />
+      <div>
+        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre Comercial / Diseño *</label>
+        <input type="text" id="pName" required placeholder="Ej. Playera Newjeans Hyein Bunnies" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label>Marca</label>
-          <input type="text" id="pBrand" class="form-control" placeholder="Optima / Basic Cap" />
+      <div class="grid grid-cols-3 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Marca</label>
+          <input type="text" id="pBrand" placeholder="Optima / Basic Cap" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
-        <div class="form-group">
-          <label>Modelo</label>
-          <input type="text" id="pModel" class="form-control" placeholder="Peinado / 5001" />
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Modelo base</label>
+          <input type="text" id="pModel" placeholder="Peinado / 5001" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
-        <div class="form-group">
-          <label>Color</label>
-          <input type="text" id="pColor" class="form-control" placeholder="Negra / Beige" />
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Foto Principal (Diseño General)</label>
-        <div style="display: flex; gap: 6px; align-items: center;">
-          <input type="text" id="pImage" class="form-control" placeholder="URL o sube archivo..." oninput="previewMainImg()" />
-          <input type="file" id="pImageFile" accept="image/*" style="display:none;" onchange="handleMainFile(this)" />
-          <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('pImageFile').click()">Subir</button>
-          <button type="button" class="btn btn-danger btn-sm" id="btnRemoveMainImg" style="display:none;" onclick="removeMainImage()">Quitar foto</button>
-        </div>
-        <img id="mainImgPreview" src="" style="width: 50px; height: 50px; object-fit: contain; margin-top: 6px; display: none; border-radius: 4px; border: 1px solid #cbd5e1;" />
-      </div>
-
-      <div class="form-group">
-        <label>Enlace de Google Drive (Archivos de Impresión / DTF / Parche)</label>
-        <input type="url" id="pDrive" class="form-control" placeholder="https://drive.google.com/..." />
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Mercado Libre URL</label>
-          <input type="url" id="pMl" class="form-control" placeholder="https://..." />
-        </div>
-        <div class="form-group">
-          <label>TikTok Shop URL</label>
-          <input type="url" id="pTiktok" class="form-control" placeholder="https://..." />
-        </div>
-        <div class="form-group">
-          <label>Amazon URL</label>
-          <input type="url" id="pAmazon" class="form-control" placeholder="https://..." />
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Color base</label>
+          <input type="text" id="pColor" placeholder="Negro / Blanco" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
       </div>
 
-      <!-- SECCIÓN ESTRUCTURA DE SKUS -->
-      <div style="border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: 12px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <label style="font-weight: 700; font-size: 0.85rem; cursor: pointer;">
-            <input type="checkbox" id="pHasVariants" onchange="toggleVariantMode()" checked /> ¿Tiene variantes (tallas o colores)?
+      <!-- FOTO PRINCIPAL -->
+      <div>
+        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Foto Principal del Diseño</label>
+        <div class="flex items-center gap-2">
+          <input type="text" id="pImage" placeholder="Pega el enlace de la foto..." oninput="previewMainImg()" class="flex-1 text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <input type="file" id="pImageFile" accept="image/*" class="hidden" onchange="handleMainFile(this)" />
+          <button type="button" onclick="document.getElementById('pImageFile').click()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2.5 rounded-lg border border-slate-300">Subir</button>
+          <div id="mainImgThumbWrap" class="variant-thumb-container hidden">
+            <img id="mainImgPreview" src="" class="w-10 h-10 object-contain rounded border border-slate-300 bg-white cursor-pointer" onclick="zoomImage(this.src)" />
+            <span class="btn-remove-thumb" onclick="removeMainImage()" title="Quitar foto">&times;</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DRIVE -->
+      <div>
+        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Enlace a Google Drive (Archivos de Impresión / DTF / Parche)</label>
+        <input type="url" id="pDrive" placeholder="https://drive.google.com/..." class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+
+      <!-- MARKETPLACES -->
+      <div class="grid grid-cols-3 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mercado Libre</label>
+          <input type="url" id="pMl" placeholder="https://articulo.mercadolibre..." class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">TikTok Shop</label>
+          <input type="url" id="pTiktok" placeholder="https://shop.tiktok.com..." class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Amazon</label>
+          <input type="url" id="pAmazon" placeholder="https://amazon..." class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+      </div>
+
+      <!-- ESTRUCTURA DE SKUS -->
+      <div class="pt-4 border-t border-slate-200">
+        <div class="flex items-center justify-between mb-3">
+          <label class="flex items-center gap-2 cursor-pointer font-bold text-sm text-slate-800">
+            <input type="checkbox" id="pHasVariants" onchange="toggleVariantMode()" class="w-4 h-4 text-blue-600 rounded" checked />
+            ¿Tiene variantes (tallas o colores)?
           </label>
-          <button type="button" class="btn btn-secondary btn-sm" id="btnCopyImg" onclick="copyMainImageToVariants()">Copiar foto principal a variantes</button>
+          <button type="button" id="btnCopyImg" onclick="copyMainImageToVariants()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded-lg border border-slate-200">
+            Copiar foto principal a variantes
+          </button>
         </div>
 
-        <!-- Campo si es producto único -->
-        <div id="singleSkuWrap" style="display: none;" class="form-group">
-          <label>SKU Único del Producto *</label>
-          <input type="text" id="pSingleSku" class="form-control" placeholder="Ej. G-MACC-01" />
+        <!-- Producto Único -->
+        <div id="singleSkuWrap" class="hidden">
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">SKU Único del Producto *</label>
+          <input type="text" id="pSingleSku" placeholder="Ej. G-MACC-01" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
 
-        <!-- Lista de Variantes -->
-        <div id="variantsWrap">
-          <div id="variantList"></div>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="addVariantRow()" style="margin-top: 6px;">+ Agregar Variante</button>
+        <!-- Lista de Variantes (Estilo original amplio) -->
+        <div id="variantsWrap" class="space-y-2">
+          <div id="variantList" class="space-y-2"></div>
+          <button type="button" onclick="addVariantRow()" class="text-xs font-bold text-blue-600 hover:text-blue-800 py-1.5 flex items-center gap-1">
+            + Agregar variante (talla o color)
+          </button>
         </div>
       </div>
 
-      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
-        <button type="button" class="btn btn-secondary" onclick="closeProductModal()">Cancelar</button>
-        <button type="submit" id="saveSubmitBtn" class="btn btn-primary">Guardar Producto</button>
+      <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+        <button type="button" onclick="closeProductModal()" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800">Cancelar</button>
+        <button type="submit" id="saveSubmitBtn" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-xl shadow-sm">Guardar Producto</button>
       </div>
     </form>
   </div>
 </div>
 
 <!-- MODAL FICHA DE DETALLE -->
-<div class="modal-overlay" id="detailModal">
-  <div class="modal" style="max-width: 550px;">
-    <div class="modal-header">
-      <h3 id="detName">Ficha de Producto</h3>
-      <button class="close-btn" onclick="closeDetailModal()">&times;</button>
-    </div>
-    
-    <div style="text-align: center; margin-bottom: 12px;">
-      <img id="detImg" src="" style="max-height: 220px; max-width: 100%; object-fit: contain; cursor: zoom-in; border-radius: 8px; border: 1px solid #e2e8f0;" onclick="zoomImage(this.src)" />
-      <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px;">Clic en la foto para ver en pantalla completa</div>
+<div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <h3 id="detName" class="text-lg font-bold text-slate-900 truncate">Ficha de Producto</h3>
+      <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
     </div>
 
-    <div style="display: flex; gap: 6px; justify-content: center; margin-bottom: 12px;" id="detSpecs"></div>
+    <div class="text-center mb-4">
+      <img id="detImg" src="" class="max-h-56 max-w-full mx-auto object-contain rounded-xl border border-slate-200 cursor-zoom-in" onclick="zoomImage(this.src)" />
+      <p class="text-[11px] text-slate-400 mt-1.5">Clic en la foto para ver en grande</p>
+    </div>
 
-    <div style="margin-bottom: 16px;">
-      <a id="detDriveBtn" href="#" target="_blank" class="btn btn-drive" style="width: 100%; justify-content: center; display: none;">
+    <div id="detSpecs" class="flex flex-wrap gap-1.5 justify-center mb-4"></div>
+
+    <div class="mb-5">
+      <a id="detDriveBtn" href="#" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition">
         📁 Abrir Diseño en Google Drive
       </a>
-      <div id="detNoDrive" style="font-size: 0.8rem; color: #94a3b8; text-align: center; display: none;">Sin enlace de Drive registrado</div>
+      <p id="detNoDrive" class="text-xs text-slate-400 text-center hidden">Sin enlace de Drive registrado</p>
     </div>
 
-    <div style="border-top: 1px solid #f1f5f9; padding-top: 12px;">
-      <h4 style="font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: #475569;">Variantes & SKUs Físicos:</h4>
-      <div id="detVariantsList"></div>
+    <div class="border-t border-slate-100 pt-3 mb-5">
+      <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Variantes & SKUs Físicos:</h4>
+      <div id="detVariantsList" class="divide-y divide-slate-100 max-h-48 overflow-y-auto"></div>
     </div>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; border-top: 1px solid #f1f5f9; padding-top: 12px;">
-      <button type="button" id="detDeleteBtn" class="btn btn-danger btn-sm">Eliminar Producto</button>
-      <button type="button" class="btn btn-secondary btn-sm" onclick="closeDetailModal()">Cerrar</button>
+    <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+      <button type="button" id="detDeleteBtn" class="bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold px-3 py-2 rounded-lg border border-red-200">Eliminar Producto</button>
+      <button type="button" onclick="closeDetailModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg">Cerrar</button>
     </div>
   </div>
 </div>
 
 <!-- LIGHTBOX ZOOM -->
-<div class="lightbox" id="lightbox" onclick="closeZoom()">
-  <img id="lightboxImg" src="" />
+<div id="lightbox" onclick="closeZoom()" class="fixed inset-0 bg-black/90 z-[100] hidden items-center justify-center p-4 cursor-zoom-out">
+  <img id="lightboxImg" src="" class="max-w-[92vw] max-h-[92vh] object-contain rounded-lg" />
 </div>
 
-<!-- SCRIPTS: FIREBASE SDK -->
+<!-- SCRIPTS FIREBASE -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -277,7 +219,7 @@
   let products = [];
   let currentSearch = "";
 
-  // Compresor de imágenes para mantener los documentos ultra ligeros en Firestore
+  // Compresor ultraligero
   function compressImage(file, maxWidth = 450, quality = 0.7) {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -287,7 +229,6 @@
           const canvas = document.createElement("canvas");
           let width = img.width;
           let height = img.height;
-
           if (width > height) {
             if (width > maxWidth) {
               height = Math.round((height * maxWidth) / width);
@@ -299,7 +240,6 @@
               height = maxWidth;
             }
           }
-
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext("2d");
@@ -312,7 +252,7 @@
     });
   }
 
-  // Escuchar cambios en Firestore en tiempo real
+  // Firestore Snapshot en tiempo real
   onSnapshot(colRef, (snapshot) => {
     products = [];
     snapshot.forEach(docSnap => {
@@ -347,7 +287,7 @@
     });
 
     if (filtered.length === 0) {
-      grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #94a3b8;">No se encontraron productos coincidentes.</div>`;
+      grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400 text-sm">No se encontraron productos coincidentes.</div>`;
       return;
     }
 
@@ -358,49 +298,51 @@
       if (q && p.variants) {
         const foundVar = p.variants.find(v => (v.sku || '').toLowerCase().includes(q) || (v.name || '').toLowerCase().includes(q));
         if (foundVar) {
-          matchInfo = `<div class="sku-badge highlight">Coincidencia: ${foundVar.name} (${foundVar.sku})</div>`;
+          matchInfo = `<span class="bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-bold px-2 py-0.5 rounded">${foundVar.name} (${foundVar.sku})</span>`;
           if (foundVar.image) displayImg = foundVar.image;
         }
       }
 
       const imgHtml = displayImg 
-        ? `<img src="${displayImg}" class="card-img" />`
-        : `<div class="card-placeholder">👕</div>`;
+        ? `<img src="${displayImg}" class="w-full h-full object-contain p-2" />`
+        : `<div class="w-full h-full flex items-center justify-center text-3xl text-slate-300">👕</div>`;
 
       const skuDisplay = p.hasVariants 
-        ? `<div class="sku-badge">${p.variants ? p.variants.length : 0} variantes</div>`
-        : `<div class="sku-badge">${p.singleSku || 'Sin SKU'}</div>`;
+        ? `<span class="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">${p.variants ? p.variants.length : 0} variantes</span>`
+        : `<span class="text-[11px] font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">${p.singleSku || 'Sin SKU'}</span>`;
 
       return `
-        <div class="card">
-          <div class="card-img-wrap" onclick="openDetailModal('${p.id}')">
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between">
+          <div class="h-44 bg-slate-50 cursor-pointer overflow-hidden flex items-center justify-center border-b border-slate-100" onclick="openDetailModal('${p.id}')">
             ${imgHtml}
           </div>
-          <div class="card-content">
+          <div class="p-4 flex-1 flex flex-col justify-between">
             <div>
-              ${matchInfo || skuDisplay}
-              <div class="card-title" onclick="openDetailModal('${p.id}')">${p.name}</div>
-              <div class="card-tags">
-                ${p.brand ? `<span class="tag">${p.brand}</span>` : ''}
-                ${p.model ? `<span class="tag">${p.model}</span>` : ''}
-                ${p.color ? `<span class="tag">${p.color}</span>` : ''}
+              <div class="mb-2">
+                ${matchInfo || skuDisplay}
+              </div>
+              <h4 class="font-bold text-slate-900 text-sm mb-1 hover:text-blue-600 cursor-pointer line-clamp-2" onclick="openDetailModal('${p.id}')">${p.name}</h4>
+              <div class="flex flex-wrap gap-1 mb-3">
+                ${p.brand ? `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">${p.brand}</span>` : ''}
+                ${p.model ? `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">${p.model}</span>` : ''}
+                ${p.color ? `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">${p.color}</span>` : ''}
               </div>
             </div>
 
             <div>
-              <div class="market-links">
-                <a href="${p.ml || '#'}" target="_blank" class="badge-market ml ${!p.ml ? 'disabled' : ''}">ML</a>
-                <a href="${p.tiktok || '#'}" target="_blank" class="badge-market tiktok ${!p.tiktok ? 'disabled' : ''}">TikTok</a>
-                <a href="${p.amazon || '#'}" target="_blank" class="badge-market amazon ${!p.amazon ? 'disabled' : ''}">Amazon</a>
+              <div class="flex items-center gap-1.5 mb-3">
+                <a href="${p.ml || '#'}" target="_blank" class="text-[11px] font-bold px-2.5 py-1 rounded-md ${p.ml ? 'bg-yellow-100 text-yellow-800' : 'bg-slate-50 text-slate-300 pointer-events-none'}">ML</a>
+                <a href="${p.tiktok || '#'}" target="_blank" class="text-[11px] font-bold px-2.5 py-1 rounded-md ${p.tiktok ? 'bg-black text-white' : 'bg-slate-50 text-slate-300 pointer-events-none'}">TikTok</a>
+                <a href="${p.amazon || '#'}" target="_blank" class="text-[11px] font-bold px-2.5 py-1 rounded-md ${p.amazon ? 'bg-orange-100 text-orange-800' : 'bg-slate-50 text-slate-300 pointer-events-none'}">Amazon</a>
               </div>
 
-              <div class="card-footer">
-                <button class="clip-btn ${p.hasClip ? 'ok' : 'pending'}" onclick="toggleClip('${p.id}')">
+              <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                <button onclick="toggleClip('${p.id}')" class="text-[11px] font-bold px-2.5 py-1 rounded-full ${p.hasClip ? 'bg-emerald-100 text-emerald-700' : 'bg-red-50 text-red-600'}">
                   ${p.hasClip ? '✓ Clip OK' : '○ Clip Pendiente'}
                 </button>
-                <div style="display: flex; gap: 4px;">
-                  <button class="btn btn-secondary btn-sm" onclick="openEditModal('${p.id}')">Editar</button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">🗑</button>
+                <div class="flex items-center gap-1">
+                  <button onclick="openEditModal('${p.id}')" class="text-xs text-slate-600 hover:text-slate-900 font-semibold px-2 py-1 rounded bg-slate-100 hover:bg-slate-200">Editar</button>
+                  <button onclick="deleteProduct('${p.id}')" class="text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50">🗑</button>
                 </div>
               </div>
             </div>
@@ -424,7 +366,7 @@
   window.deleteProduct = async function(id) {
     const p = products.find(x => x.id === id);
     if (!p) return;
-    if (confirm(`¿Estás seguro de eliminar "${p.name}" por completo? Esta acción no se puede deshacer.`)) {
+    if (confirm(`¿Estás seguro de eliminar "${p.name}" por completo?`)) {
       await deleteDoc(doc(db, "productos", id));
       closeDetailModal();
     }
@@ -490,8 +432,7 @@
     document.getElementById("modalTitle").innerText = "Nuevo Producto";
     document.getElementById("editProductId").value = "";
     document.getElementById("productForm").reset();
-    document.getElementById("mainImgPreview").style.display = "none";
-    document.getElementById("btnRemoveMainImg").style.display = "none";
+    document.getElementById("mainImgThumbWrap").classList.add("hidden");
     document.getElementById("variantList").innerHTML = "";
     document.getElementById("pHasVariants").checked = true;
     toggleVariantMode();
@@ -501,7 +442,8 @@
     addVariantRow("G", "");
     addVariantRow("EG", "");
 
-    document.getElementById("productModal").classList.add("active");
+    document.getElementById("productModal").classList.remove("hidden");
+    document.getElementById("productModal").classList.add("flex");
   };
 
   window.openEditModal = function(id) {
@@ -534,11 +476,13 @@
       }
     }
 
-    document.getElementById("productModal").classList.add("active");
+    document.getElementById("productModal").classList.remove("hidden");
+    document.getElementById("productModal").classList.add("flex");
   };
 
   window.closeProductModal = function() {
-    document.getElementById("productModal").classList.remove("active");
+    document.getElementById("productModal").classList.add("hidden");
+    document.getElementById("productModal").classList.remove("flex");
   };
 
   window.toggleVariantMode = function() {
@@ -548,54 +492,47 @@
     document.getElementById("btnCopyImg").style.display = hasVariants ? "inline-block" : "none";
   };
 
-  // Fila de Variante: Con botón explícito para quitar únicamente la imagen sin alterar el SKU
+  // FILA DE VARIANTE CON EL DISEÑO AMPLIO ORIGINAL
   window.addVariantRow = function(name = "", sku = "", image = "") {
     const div = document.createElement("div");
-    div.className = "variant-row";
+    div.className = "variant-row flex items-center gap-2";
     div.innerHTML = `
-      <input type="text" class="form-control v-name" placeholder="Talla / Color" value="${name}" style="flex: 0.8;" required />
-      <input type="text" class="form-control v-sku" placeholder="SKU Físico" value="${sku}" style="flex: 1.1;" required />
-      <input type="text" class="form-control v-img" placeholder="URL o sube foto" value="${image}" oninput="updateVarThumb(this)" style="font-size: 0.75rem;" />
-      <input type="file" accept="image/*" style="display:none;" onchange="handleVarFile(this)" />
-      <button type="button" class="btn btn-secondary btn-sm" onclick="this.previousElementSibling.click()">Subir</button>
-      
-      <div class="variant-thumb-wrap" style="${image ? '' : 'display:none;'}">
-        <img src="${image}" class="variant-thumb" onclick="zoomImage(this.src)" title="Ver imagen completa" />
-        <button type="button" class="btn-clear-photo" title="Quitar solo la foto" onclick="clearVariantPhoto(this)">✕</button>
+      <input type="text" class="v-name w-1/4 text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Talla / Color" value="${name}" required />
+      <input type="text" class="v-sku w-1/4 text-sm font-mono border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase" placeholder="SKU Físico" value="${sku}" required />
+      <div class="flex-1 flex items-center gap-2">
+        <input type="text" class="v-img flex-1 text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="URL Foto variante (opcional)" value="${image}" oninput="updateVarThumb(this)" />
+        <input type="file" accept="image/*" class="hidden" onchange="handleVarFile(this)" />
+        <button type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-2.5 py-2 rounded-lg border border-slate-300" onclick="this.previousElementSibling.click()">Subir</button>
+        <div class="variant-thumb-container ${image ? '' : 'hidden'}">
+          <img src="${image}" class="variant-thumb w-8 h-8 object-contain rounded border border-slate-300 bg-white cursor-pointer" onclick="zoomImage(this.src)" />
+          <span class="btn-remove-thumb" onclick="clearVariantPhoto(this)" title="Quitar solo la foto">&times;</span>
+        </div>
       </div>
-
-      <button type="button" class="btn btn-secondary btn-sm" title="Eliminar fila de variante completa" onclick="removeVariantRow(this)" style="color: #ef4444; border-color: #fecaca;">Eliminar SKU</button>
+      <button type="button" class="text-slate-400 hover:text-red-500 p-1" title="Eliminar SKU" onclick="this.closest('.variant-row').remove()">
+        🗑
+      </button>
     `;
     document.getElementById("variantList").appendChild(div);
   };
 
-  // Quitar ÚNICAMENTE la foto de la variante
+  // Quitar ÚNICAMENTE la foto de la variante sin tocar el SKU
   window.clearVariantPhoto = function(btn) {
     const row = btn.closest(".variant-row");
     row.querySelector(".v-img").value = "";
-    const wrap = row.querySelector(".variant-thumb-wrap");
-    wrap.style.display = "none";
+    const wrap = btn.closest(".variant-thumb-container");
+    wrap.classList.add("hidden");
     wrap.querySelector(".variant-thumb").src = "";
   };
 
-  // Eliminar la variante completa con confirmación
-  window.removeVariantRow = function(btn) {
-    const row = btn.closest(".variant-row");
-    const name = row.querySelector(".v-name").value || "esta variante";
-    if (confirm(`¿Deseas eliminar la variante "${name}" por completo?`)) {
-      row.remove();
-    }
-  };
-
   window.updateVarThumb = function(input) {
-    const wrap = input.parentElement.querySelector(".variant-thumb-wrap");
+    const wrap = input.parentElement.querySelector(".variant-thumb-container");
     const thumb = wrap.querySelector(".variant-thumb");
     if (input.value.trim()) {
       thumb.src = input.value.trim();
-      wrap.style.display = "inline-flex";
+      wrap.classList.remove("hidden");
     } else {
       thumb.src = "";
-      wrap.style.display = "none";
+      wrap.classList.add("hidden");
     }
   };
 
@@ -603,15 +540,15 @@
     const file = input.files[0];
     if (!file) return;
     const compressed = await compressImage(file);
-    const row = input.parentElement;
+    const row = input.closest(".variant-row");
     row.querySelector(".v-img").value = compressed;
-    const wrap = row.querySelector(".variant-thumb-wrap");
+    const wrap = row.querySelector(".variant-thumb-container");
     const thumb = wrap.querySelector(".variant-thumb");
     thumb.src = compressed;
-    wrap.style.display = "inline-flex";
+    wrap.classList.remove("hidden");
   };
 
-  // Quitar ÚNICAMENTE la imagen principal
+  // Quitar foto principal
   window.removeMainImage = function() {
     document.getElementById("pImage").value = "";
     document.getElementById("pImageFile").value = "";
@@ -620,15 +557,13 @@
 
   window.previewMainImg = function() {
     const val = document.getElementById("pImage").value.trim();
+    const wrap = document.getElementById("mainImgThumbWrap");
     const prev = document.getElementById("mainImgPreview");
-    const btnRemove = document.getElementById("btnRemoveMainImg");
     if (val) {
       prev.src = val;
-      prev.style.display = "block";
-      btnRemove.style.display = "inline-flex";
+      wrap.classList.remove("hidden");
     } else {
-      prev.style.display = "none";
-      btnRemove.style.display = "none";
+      wrap.classList.add("hidden");
     }
   };
 
@@ -649,13 +584,14 @@
     const rows = document.querySelectorAll("#variantList .variant-row");
     rows.forEach(r => {
       r.querySelector(".v-img").value = mainImg;
-      const wrap = r.querySelector(".variant-thumb-wrap");
+      const wrap = r.querySelector(".variant-thumb-container");
       const thumb = wrap.querySelector(".variant-thumb");
       thumb.src = mainImg;
-      wrap.style.display = "inline-flex";
+      wrap.classList.remove("hidden");
     });
   };
 
+  // MODAL DETALLE
   window.openDetailModal = function(id) {
     const p = products.find(x => x.id === id);
     if (!p) return;
@@ -664,9 +600,9 @@
     document.getElementById("detImg").src = p.image || "https://via.placeholder.com/400x300?text=Sin+Foto";
 
     document.getElementById("detSpecs").innerHTML = `
-      ${p.brand ? `<span class="tag">${p.brand}</span>` : ''}
-      ${p.model ? `<span class="tag">${p.model}</span>` : ''}
-      ${p.color ? `<span class="tag">${p.color}</span>` : ''}
+      ${p.brand ? `<span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-medium">${p.brand}</span>` : ''}
+      ${p.model ? `<span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-medium">${p.model}</span>` : ''}
+      ${p.color ? `<span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-medium">${p.color}</span>` : ''}
     `;
 
     const driveBtn = document.getElementById("detDriveBtn");
@@ -683,39 +619,44 @@
     const varList = document.getElementById("detVariantsList");
     if (p.hasVariants && p.variants && p.variants.length > 0) {
       varList.innerHTML = p.variants.map(v => `
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-bottom: 1px solid #f1f5f9;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            ${v.image ? `<img src="${v.image}" style="width: 32px; height: 32px; object-fit: contain; border-radius: 4px; cursor: pointer;" onclick="zoomImage('${v.image}')" />` : ''}
-            <span style="font-size: 0.85rem; font-weight: 600;">${v.name}</span>
+        <div class="flex items-center justify-between py-2 px-1">
+          <div class="flex items-center gap-2.5">
+            ${v.image ? `<img src="${v.image}" class="w-8 h-8 object-contain rounded border border-slate-200 cursor-zoom-in" onclick="zoomImage('${v.image}')" />` : ''}
+            <span class="text-sm font-semibold text-slate-800">${v.name}</span>
           </div>
-          <span class="sku-badge">${v.sku}</span>
+          <span class="text-xs font-mono font-bold bg-slate-100 text-slate-700 px-2 py-1 rounded">${v.sku}</span>
         </div>
       `).join("");
     } else {
       varList.innerHTML = `
-        <div style="display: flex; justify-content: space-between; padding: 6px 8px;">
-          <span style="font-size: 0.85rem; color: #64748b;">Producto Único</span>
-          <span class="sku-badge">${p.singleSku || 'Sin SKU'}</span>
+        <div class="flex justify-between py-2 px-1 text-sm">
+          <span class="text-slate-500">Producto Único</span>
+          <span class="font-mono font-bold bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs">${p.singleSku || 'Sin SKU'}</span>
         </div>
       `;
     }
 
     document.getElementById("detDeleteBtn").onclick = () => deleteProduct(p.id);
-    document.getElementById("detailModal").classList.add("active");
+    document.getElementById("detailModal").classList.remove("hidden");
+    document.getElementById("detailModal").classList.add("flex");
   };
 
   window.closeDetailModal = function() {
-    document.getElementById("detailModal").classList.remove("active");
+    document.getElementById("detailModal").classList.add("hidden");
+    document.getElementById("detailModal").classList.remove("flex");
   };
 
+  // ZOOM LIGHTBOX
   window.zoomImage = function(src) {
     if (!src) return;
     document.getElementById("lightboxImg").src = src;
-    document.getElementById("lightbox").classList.add("active");
+    document.getElementById("lightbox").classList.remove("hidden");
+    document.getElementById("lightbox").classList.add("flex");
   };
 
   window.closeZoom = function() {
-    document.getElementById("lightbox").classList.remove("active");
+    document.getElementById("lightbox").classList.add("hidden");
+    document.getElementById("lightbox").classList.remove("flex");
   };
 </script>
 
