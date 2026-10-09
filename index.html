@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Catálogo E-commerce & Taller - Tinta Fuerte</title>
-  <!-- Tailwind CSS desde CDN confiable para el diseño estilizado original -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -36,7 +35,7 @@
   <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-black text-slate-900 tracking-tight">Catálogo E-commerce & Taller</h1>
-      <p class="text-sm text-slate-500">Gestión de SKUs, Tallas, Colores y Archivos de Impresión en Drive</p>
+      <p class="text-sm text-slate-500">Gestión de SKUs, Tallas, Colores, Títulos por Marketplace y Drive</p>
     </div>
     <div class="flex items-center gap-3">
       <button onclick="openCreateModal()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition">
@@ -48,7 +47,7 @@
   <!-- BUSCADOR -->
   <div class="mb-6">
     <div class="relative">
-      <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Buscar por SKU (cualquier talla o color), nombre de diseño, prenda o modelo..." class="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" />
+      <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Buscar por SKU (cualquier variante), título de ML/TikTok/Amazon, prenda o diseño..." class="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" />
     </div>
     <div id="statsInfo" class="text-xs text-slate-500 mt-2 px-1 font-medium">Cargando catálogo...</div>
   </div>
@@ -69,18 +68,18 @@
       <input type="hidden" id="editProductId" />
 
       <div>
-        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre Comercial / Diseño *</label>
+        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre Comercial del Diseño *</label>
         <input type="text" id="pName" required placeholder="Ej. Playera Newjeans Hyein Bunnies" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
 
       <div class="grid grid-cols-3 gap-3">
         <div>
           <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Marca</label>
-          <input type="text" id="pBrand" placeholder="Optima / Basic Cap" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <input type="text" id="pBrand" placeholder="Optima / Yupoong" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Modelo base</label>
-          <input type="text" id="pModel" placeholder="Peinado / 5001" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <input type="text" id="pModel" placeholder="Peinado / 6606" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Color base</label>
@@ -92,7 +91,7 @@
       <div>
         <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Foto Principal del Diseño</label>
         <div class="flex items-center gap-2">
-          <input type="text" id="pImage" placeholder="Pega el enlace de la foto..." oninput="previewMainImg()" class="flex-1 text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <input type="text" id="pImage" placeholder="Pega el enlace web de la foto..." oninput="previewMainImg()" class="flex-1 text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           <input type="file" id="pImageFile" accept="image/*" class="hidden" onchange="handleMainFile(this)" />
           <button type="button" onclick="document.getElementById('pImageFile').click()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2.5 rounded-lg border border-slate-300">Subir</button>
           <div id="mainImgThumbWrap" class="variant-thumb-container hidden">
@@ -108,19 +107,40 @@
         <input type="url" id="pDrive" placeholder="https://drive.google.com/..." class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
 
-      <!-- MARKETPLACES -->
+      <!-- ENLACES DE MARKETPLACES -->
       <div class="grid grid-cols-3 gap-3">
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mercado Libre</label>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Enlace Mercado Libre</label>
           <input type="url" id="pMl" placeholder="https://articulo.mercadolibre..." class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">TikTok Shop</label>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Enlace TikTok Shop</label>
           <input type="url" id="pTiktok" placeholder="https://shop.tiktok.com..." class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Amazon</label>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Enlace Amazon</label>
           <input type="url" id="pAmazon" placeholder="https://amazon..." class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+      </div>
+
+      <!-- SECCIÓN: TÍTULOS ESPECÍFICOS POR PLATAFORMA -->
+      <div class="pt-2">
+        <button type="button" onclick="toggleCustomTitles()" class="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1">
+          <span id="customTitlesToggleIcon">▼</span> Títulos personalizados por plataforma (ML, TikTok, Amazon)
+        </button>
+        <div id="customTitlesWrap" class="mt-2.5 p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Título exacto en Mercado Libre</label>
+            <input type="text" id="pTitleMl" placeholder="Título publicado en Mercado Libre..." class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Título exacto en TikTok Shop</label>
+            <input type="text" id="pTitleTiktok" placeholder="Título publicado en TikTok Shop..." class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Título exacto en Amazon</label>
+            <input type="text" id="pTitleAmazon" placeholder="Título publicado en Amazon..." class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
         </div>
       </div>
 
@@ -142,7 +162,7 @@
           <input type="text" id="pSingleSku" placeholder="Ej. G-MACC-01" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
 
-        <!-- Lista de Variantes (Estilo original amplio) -->
+        <!-- Lista de Variantes -->
         <div id="variantsWrap" class="space-y-2">
           <div id="variantList" class="space-y-2"></div>
           <button type="button" onclick="addVariantRow()" class="text-xs font-bold text-blue-600 hover:text-blue-800 py-1.5 flex items-center gap-1">
@@ -174,11 +194,17 @@
 
     <div id="detSpecs" class="flex flex-wrap gap-1.5 justify-center mb-4"></div>
 
-    <div class="mb-5">
+    <div class="mb-4">
       <a id="detDriveBtn" href="#" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition">
-        📁 Abrir Diseño en Google Drive
+        📁 Abrir Archivos en Google Drive
       </a>
       <p id="detNoDrive" class="text-xs text-slate-400 text-center hidden">Sin enlace de Drive registrado</p>
+    </div>
+
+    <!-- TÍTULOS EN MARKETPLACES EN LA FICHA -->
+    <div id="detTitlesSection" class="border-t border-slate-100 pt-3 mb-4 hidden">
+      <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Títulos por Plataforma:</h4>
+      <div id="detTitlesList" class="space-y-2"></div>
     </div>
 
     <div class="border-t border-slate-100 pt-3 mb-5">
@@ -219,7 +245,6 @@
   let products = [];
   let currentSearch = "";
 
-  // Compresor ultraligero
   function compressImage(file, maxWidth = 450, quality = 0.7) {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -278,7 +303,10 @@
       const matchParent = (p.name || '').toLowerCase().includes(q) ||
                           (p.brand || '').toLowerCase().includes(q) ||
                           (p.model || '').toLowerCase().includes(q) ||
-                          (p.singleSku || '').toLowerCase().includes(q);
+                          (p.singleSku || '').toLowerCase().includes(q) ||
+                          (p.titleMl || '').toLowerCase().includes(q) ||
+                          (p.titleTiktok || '').toLowerCase().includes(q) ||
+                          (p.titleAmazon || '').toLowerCase().includes(q);
       const matchVariant = p.variants?.some(v => 
         (v.name || '').toLowerCase().includes(q) || 
         (v.sku || '').toLowerCase().includes(q)
@@ -372,6 +400,18 @@
     }
   };
 
+  window.toggleCustomTitles = function() {
+    const wrap = document.getElementById("customTitlesWrap");
+    const icon = document.getElementById("customTitlesToggleIcon");
+    if (wrap.classList.contains("hidden")) {
+      wrap.classList.remove("hidden");
+      icon.innerText = "▲";
+    } else {
+      wrap.classList.add("hidden");
+      icon.innerText = "▼";
+    }
+  };
+
   window.saveProduct = async function(e) {
     e.preventDefault();
     const btn = document.getElementById("saveSubmitBtn");
@@ -408,6 +448,9 @@
         ml: document.getElementById("pMl").value.trim(),
         tiktok: document.getElementById("pTiktok").value.trim(),
         amazon: document.getElementById("pAmazon").value.trim(),
+        titleMl: document.getElementById("pTitleMl").value.trim(),
+        titleTiktok: document.getElementById("pTitleTiktok").value.trim(),
+        titleAmazon: document.getElementById("pTitleAmazon").value.trim(),
         hasVariants: hasVariants,
         singleSku: singleSku,
         variants: variants,
@@ -437,6 +480,10 @@
     document.getElementById("pHasVariants").checked = true;
     toggleVariantMode();
 
+    // Reset titulos personalizados
+    document.getElementById("customTitlesWrap").classList.add("hidden");
+    document.getElementById("customTitlesToggleIcon").innerText = "▼";
+
     addVariantRow("CH", "");
     addVariantRow("M", "");
     addVariantRow("G", "");
@@ -461,6 +508,19 @@
     document.getElementById("pMl").value = p.ml || "";
     document.getElementById("pTiktok").value = p.tiktok || "";
     document.getElementById("pAmazon").value = p.amazon || "";
+    
+    document.getElementById("pTitleMl").value = p.titleMl || "";
+    document.getElementById("pTitleTiktok").value = p.titleTiktok || "";
+    document.getElementById("pTitleAmazon").value = p.titleAmazon || "";
+
+    // Si tiene titulos personalizados, abrir el acordeón
+    if (p.titleMl || p.titleTiktok || p.titleAmazon) {
+      document.getElementById("customTitlesWrap").classList.remove("hidden");
+      document.getElementById("customTitlesToggleIcon").innerText = "▲";
+    } else {
+      document.getElementById("customTitlesWrap").classList.add("hidden");
+      document.getElementById("customTitlesToggleIcon").innerText = "▼";
+    }
 
     previewMainImg();
 
@@ -492,7 +552,6 @@
     document.getElementById("btnCopyImg").style.display = hasVariants ? "inline-block" : "none";
   };
 
-  // FILA DE VARIANTE CON EL DISEÑO AMPLIO ORIGINAL
   window.addVariantRow = function(name = "", sku = "", image = "") {
     const div = document.createElement("div");
     div.className = "variant-row flex items-center gap-2";
@@ -515,7 +574,6 @@
     document.getElementById("variantList").appendChild(div);
   };
 
-  // Quitar ÚNICAMENTE la foto de la variante sin tocar el SKU
   window.clearVariantPhoto = function(btn) {
     const row = btn.closest(".variant-row");
     row.querySelector(".v-img").value = "";
@@ -548,7 +606,6 @@
     wrap.classList.remove("hidden");
   };
 
-  // Quitar foto principal
   window.removeMainImage = function() {
     document.getElementById("pImage").value = "";
     document.getElementById("pImageFile").value = "";
@@ -591,6 +648,19 @@
     });
   };
 
+  // COPIAR TEXTO RÁPIDO AL PORTAPAPELES
+  window.copyText = function(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      const orig = btn.innerText;
+      btn.innerText = "¡Copiado!";
+      btn.classList.add("text-emerald-600");
+      setTimeout(() => {
+        btn.innerText = orig;
+        btn.classList.remove("text-emerald-600");
+      }, 1500);
+    });
+  };
+
   // MODAL DETALLE
   window.openDetailModal = function(id) {
     const p = products.find(x => x.id === id);
@@ -616,6 +686,44 @@
       noDrive.style.display = "block";
     }
 
+    // RENDERIZAR TÍTULOS EN EL DETALLE SI EXISTEN
+    const titlesSec = document.getElementById("detTitlesSection");
+    const titlesList = document.getElementById("detTitlesList");
+    let titlesHtml = "";
+
+    if (p.titleMl) {
+      titlesHtml += `
+        <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex items-center justify-between gap-2">
+          <div class="text-xs text-slate-800"><span class="font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded mr-1">ML</span> ${p.titleMl}</div>
+          <button onclick="copyText('${p.titleMl}', this)" class="text-[11px] font-bold text-slate-500 hover:text-slate-800 bg-white border border-slate-200 px-2 py-1 rounded shadow-2xs shrink-0">Copiar</button>
+        </div>
+      `;
+    }
+    if (p.titleTiktok) {
+      titlesHtml += `
+        <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex items-center justify-between gap-2">
+          <div class="text-xs text-slate-800"><span class="font-bold text-white bg-black px-1.5 py-0.5 rounded mr-1">TikTok</span> ${p.titleTiktok}</div>
+          <button onclick="copyText('${p.titleTiktok}', this)" class="text-[11px] font-bold text-slate-500 hover:text-slate-800 bg-white border border-slate-200 px-2 py-1 rounded shadow-2xs shrink-0">Copiar</button>
+        </div>
+      `;
+    }
+    if (p.titleAmazon) {
+      titlesHtml += `
+        <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex items-center justify-between gap-2">
+          <div class="text-xs text-slate-800"><span class="font-bold text-orange-800 bg-orange-100 px-1.5 py-0.5 rounded mr-1">Amazon</span> ${p.titleAmazon}</div>
+          <button onclick="copyText('${p.titleAmazon}', this)" class="text-[11px] font-bold text-slate-500 hover:text-slate-800 bg-white border border-slate-200 px-2 py-1 rounded shadow-2xs shrink-0">Copiar</button>
+        </div>
+      `;
+    }
+
+    if (titlesHtml) {
+      titlesList.innerHTML = titlesHtml;
+      titlesSec.classList.remove("hidden");
+    } else {
+      titlesSec.classList.add("hidden");
+    }
+
+    // VARIANTES
     const varList = document.getElementById("detVariantsList");
     if (p.hasVariants && p.variants && p.variants.length > 0) {
       varList.innerHTML = p.variants.map(v => `
