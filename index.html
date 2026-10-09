@@ -1,255 +1,1273 @@
-  <div class="flex items-center gap-2">
-    <button id="btnExport" title="Descargar respaldo JSON" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition">
-      <i data-lucide="download" class="w-4 h-4"></i>
-      <span class="hidden sm:inline">Exportar</span>
-    </button>
-    <label title="Cargar respaldo JSON" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer transition">
-      <i data-lucide="upload" class="w-4 h-4"></i>
-      <span class="hidden sm:inline">Importar</span>
-      <input type="file" id="fileImport" accept=".json" class="hidden">
-    </label>
-    <button id="btnOpenNew" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition">
-      <i data-lucide="plus-circle" class="w-4 h-4"></i>
-      <span>Nuevo Producto</span>
-    </button>
-  </div>
-</div>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo Tinta Fuerte - Gestor de SKUs</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Iconos Lucide -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 
+  <!-- Firebase App & Firestore (SDK Modular v10 via CDN) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { 
+      getFirestore, 
+      collection, 
+      onSnapshot, 
+      doc, 
+      setDoc, 
+      deleteDoc, 
+      updateDoc 
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-<!-- Barra de búsqueda e información -->
-<div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center justify-between">
-  <div class="relative w-full md:max-w-xl">
-    <i data-lucide="search" class="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-    <input 
-      type="text" 
-      id="searchInput" 
-      placeholder="Buscar por SKU (cualquier talla/color), nombre, prenda o título..." 
-      class="w-full pl-11 pr-10 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-    >
-    <button id="btnClearSearch" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-      <i data-lucide="x" class="w-4 h-4"></i>
-    </button>
-  </div>
-  <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end text-xs text-slate-500 font-medium">
-    <span id="productCount" class="bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">0 productos</span>
-    <span id="skuCount" class="bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">0 SKUs registrados</span>
-  </div>
-</div>
+    // Credenciales exactas de tu proyecto Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDQFTKMITbswMdIutcPRMouiNMU7BdkULw",
+      authDomain: "ecommercetintafuertecatalogo.firebaseapp.com",
+      projectId: "ecommercetintafuertecatalogo",
+      storageBucket: "ecommercetintafuertecatalogo.firebasestorage.app",
+      messagingSenderId: "745349091248",
+      appId: "1:745349091248:web:461151febc5b8c16da5075"
+    };
 
-<!-- Grid de Productos -->
-<div id="productGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-  <!-- Se genera dinámicamente con JavaScript -->
-</div>
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    window.db = db;
+    window.firestoreTools = { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc };
 
-<!-- Estado vacío -->
-<div id="emptyState" class="hidden text-center py-16 px-4">
-  <div class="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-400">
-    <i data-lucide="package-x" class="w-8 h-8"></i>
-  </div>
-  <h3 class="text-base font-semibold text-slate-800">No se encontraron productos</h3>
-  <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Verifica tu búsqueda o registra un nuevo producto con el botón superior.</p>
-</div>
+    // Disparar evento para inicializar la aplicación con Firebase activo
+    window.dispatchEvent(new Event('firebase-ready'));
+  </script>
 
+  <style>
+    /* Estilos de barra de scroll y transiciones */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans antialiased">
 
-  <form id="productForm" class="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
-    <input type="hidden" id="formProductId">
-
-    <!-- Info Principal -->
-    <div class="space-y-4">
-      <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Información Básica</h3>
-      
-      <div>
-        <label class="block font-medium text-slate-700 mb-1">Nombre Comercial del Producto / Diseño *</label>
-        <input type="text" id="formName" required placeholder="Ej: Playera Newjeans Hyein Bunnies o Gorra San Andreas" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">Marca de la prenda</label>
-          <input type="text" id="formBrand" placeholder="Ej: Optima / Basic Cap" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+  <!-- Top Header / Barra Superior -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+          <i data-lucide="layers" class="w-5 h-5"></i>
         </div>
         <div>
-          <label class="block font-medium text-slate-700 mb-1">Modelo base</label>
-          <input type="text" id="formModel" placeholder="Ej: Algodón Peinado / 5001" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-        </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">Color principal</label>
-          <input type="text" id="formColor" placeholder="Ej: Negra / Blanca" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <h1 class="text-base font-bold text-slate-900 leading-tight">Catálogo Tinta Fuerte</h1>
+          <div class="flex items-center gap-1.5 text-[11px] text-slate-500">
+            <span id="cloudStatusBadge" class="inline-flex items-center gap-1 text-emerald-600 font-medium">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Sincronizado en la nube (Firestore)
+            </span>
+          </div>
         </div>
       </div>
 
-      <!-- Imagen Principal -->
-      <div class="space-y-2">
-        <label class="block font-medium text-slate-700">Foto Principal del Diseño</label>
-        <div class="flex items-center gap-3">
-          <input type="text" id="formImageUrl" placeholder="Pega el enlace de la imagen..." class="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          <span class="text-slate-400">o</span>
-          <label class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg cursor-pointer transition">
-            <i data-lucide="image" class="w-4 h-4 inline mr-1"></i> Subir
-            <input type="file" id="formImageFile" accept="image/*" class="hidden">
-          </label>
-        </div>
-        <div id="formImagePreviewContainer" class="hidden flex items-center gap-3 p-2 bg-slate-50 border border-slate-200 rounded-lg">
-          <img id="formImagePreview" src="" alt="Previa" class="w-12 h-12 object-cover rounded-md border border-slate-200">
-          <span class="text-[11px] text-slate-500">Vista previa de imagen cargada</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Enlaces y Producción -->
-    <div class="space-y-4 pt-2 border-t border-slate-100">
-      <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Enlaces & Producción</h3>
-
-      <div>
-        <label class="block font-medium text-slate-700 mb-1">Enlace a Google Drive (Archivos de Impresión/Taller)</label>
-        <div class="relative">
-          <i data-lucide="folder" class="w-4 h-4 text-emerald-600 absolute left-3 top-1/2 -translate-y-1/2"></i>
-          <input type="url" id="formDriveUrl" placeholder="https://drive.google.com/..." class="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">Enlace Mercado Libre</label>
-          <input type="url" id="formUrlMl" placeholder="https://articulo.mercadolibre..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-        </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">Enlace TikTok Shop</label>
-          <input type="url" id="formUrlTiktok" placeholder="https://shop.tiktok..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-        </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">Enlace Amazon</label>
-          <input type="url" id="formUrlAmazon" placeholder="https://amazon..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-        </div>
-      </div>
-    </div>
-
-    <!-- Títulos Ocultos para Búsqueda -->
-    <div class="space-y-3 pt-2 border-t border-slate-100">
-      <button type="button" onclick="toggleExtraTitles()" class="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1">
-        <span id="titlesToggleText">+ Agregar variaciones de títulos por plataforma (opcional)</span>
-      </button>
-      <div id="extraTitlesContainer" class="hidden space-y-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
-        <div>
-          <label class="block font-medium text-slate-600 mb-0.5">Título en Mercado Libre</label>
-          <input type="text" id="formTitleMl" placeholder="Título exacto publicado en ML..." class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg">
-        </div>
-        <div>
-          <label class="block font-medium text-slate-600 mb-0.5">Título en TikTok Shop</label>
-          <input type="text" id="formTitleTiktok" placeholder="Título en TikTok..." class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg">
-        </div>
-        <div>
-          <label class="block font-medium text-slate-600 mb-0.5">Título en Amazon</label>
-          <input type="text" id="formTitleAmazon" placeholder="Título en Amazon..." class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg">
-        </div>
-      </div>
-    </div>
-
-    <!-- Manejo de SKUs y Variantes -->
-    <div class="space-y-4 pt-2 border-t border-slate-100">
-      <div class="flex items-center justify-between">
-        <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Estructura de SKUs</h3>
-        <label class="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" id="formHasVariants" class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" onchange="toggleVariantMode()">
-          <span class="font-medium text-slate-700">¿Tiene variantes (tallas o colores)?</span>
+      <!-- Acciones de Cabecera -->
+      <div class="flex items-center gap-2">
+        <button id="btnExport" title="Exportar respaldo JSON local" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Exportar</span>
+        </button>
+        <label title="Importar respaldo JSON" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer transition">
+          <i data-lucide="upload" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Importar</span>
+          <input type="file" id="fileImport" accept=".json" class="hidden">
         </label>
-      </div>
-
-      <!-- MODO 1: Producto Único (1 solo SKU padre) -->
-      <div id="singleSkuSection" class="space-y-2">
-        <label class="block font-medium text-slate-700">SKU Único del Producto *</label>
-        <input type="text" id="formSingleSku" placeholder="Ej: 1J-6EIQ-3CLV" class="w-full px-3 py-2 text-sm uppercase font-mono border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="checkSingleSkuDuplicate(this.value)">
-        <p id="singleSkuError" class="hidden text-xs text-rose-600 font-medium flex items-center gap-1">
-          <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> <span>¡Este SKU ya está registrado en otro producto!</span>
-        </p>
-      </div>
-
-      <!-- MODO 2: Variantes (Hijos con SKU obligatorio) -->
-      <div id="variantsSection" class="hidden space-y-3">
-        <div class="flex items-center justify-between">
-          <p class="text-slate-500 text-[11px]">Agrega cada talla o color con su respectivo SKU. (El diseño padre no lleva SKU).</p>
-          <button type="button" onclick="copyMainImageToVariants()" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-[11px] transition">
-            Copiar foto principal a variantes
-          </button>
-        </div>
-
-        <div id="variantsList" class="space-y-2">
-          <!-- Filas de variantes generadas dinámicamente -->
-        </div>
-
-        <button type="button" onclick="addVariantRow()" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-semibold">
-          <i data-lucide="plus" class="w-3.5 h-3.5"></i> Agregar variante (talla/color)
+        <button id="btnOpenNew" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Nuevo Producto</span>
         </button>
       </div>
     </div>
+  </header>
 
-    <div id="formGeneralError" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs font-medium"></div>
+  <!-- Contenedor Principal -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full flex flex-col gap-6">
 
-    <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
-      <button type="button" onclick="closeModalForm()" class="px-4 py-2 border border-slate-200 text-slate-600 font-medium rounded-lg hover:bg-slate-50 transition">Cancelar</button>
-      <button type="submit" id="btnSubmitForm" class="px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 shadow-sm transition">Guardar Producto</button>
+    <!-- Barra de búsqueda e información -->
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center justify-between">
+      <div class="relative w-full md:max-w-xl">
+        <i data-lucide="search" class="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+        <input 
+          type="text" 
+          id="searchInput" 
+          placeholder="Buscar por SKU (cualquier talla/color), nombre del diseño, marca o títulos..." 
+          class="w-full pl-11 pr-10 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+        >
+        <button id="btnClearSearch" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end text-xs text-slate-500 font-medium">
+        <span id="productCount" class="bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">0 productos</span>
+        <span id="skuCount" class="bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">0 SKUs registrados</span>
+      </div>
     </div>
-  </form>
-</div>
 
+    <!-- Grid de Tarjetas de Productos -->
+    <div id="productGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <!-- Se llena dinámicamente -->
+    </div>
 
-  <div class="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
-    <!-- Encabezado con Imagen y Datos -->
-    <div class="flex flex-col sm:flex-row gap-5 items-start">
-      <div class="relative group cursor-pointer w-full sm:w-40 h-40 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 flex-shrink-0" onclick="openLightboxFromDetail()">
-        <img id="detailImage" src="" alt="" class="w-full h-full object-cover">
-        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition">
-          <i data-lucide="maximize-2" class="w-6 h-6 mb-1"></i>
-          <span class="text-[10px] font-medium">Ver en grande</span>
+    <!-- Estado vacío -->
+    <div id="emptyState" class="hidden text-center py-20 px-4">
+      <div class="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-400">
+        <i data-lucide="package-x" class="w-8 h-8"></i>
+      </div>
+      <h3 class="text-base font-semibold text-slate-800">No se encontraron productos</h3>
+      <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Revisa el término de búsqueda o crea un producto nuevo con el botón superior.</p>
+    </div>
+
+  </main>
+
+  <!-- MODAL: CREAR / EDITAR PRODUCTO -->
+  <div id="modalForm" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-200">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <h2 id="modalFormTitle" class="text-sm font-bold text-slate-800 flex items-center gap-2">
+          <i data-lucide="package-plus" class="w-4 h-4 text-blue-600"></i>
+          <span>Registrar Nuevo Producto</span>
+        </h2>
+        <button type="button" onclick="closeModalForm()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="productForm" class="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
+        <input type="hidden" id="formProductId">
+
+        <!-- Info Principal -->
+        <div class="space-y-4">
+          <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Información Básica</h3>
+          
+          <div>
+            <label class="block font-medium text-slate-700 mb-1">Nombre Comercial del Producto / Diseño *</label>
+            <input type="text" id="formName" required placeholder="Ej: Playera Newjeans Hyein Bunnies o Gorra San Andreas" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block font-medium text-slate-700 mb-1">Marca de la prenda</label>
+              <input type="text" id="formBrand" placeholder="Ej: Optima / Basic Cap" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block font-medium text-slate-700 mb-1">Modelo base</label>
+              <input type="text" id="formModel" placeholder="Ej: Algodón Peinado / 5001" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block font-medium text-slate-700 mb-1">Color base</label>
+              <input type="text" id="formColor" placeholder="Ej: Negra / Blanca / Beige" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+          </div>
+
+          <!-- Imagen Principal -->
+          <div class="space-y-2">
+            <label class="block font-medium text-slate-700">Foto Principal del Diseño</label>
+            <div class="flex items-center gap-3">
+              <input type="text" id="formImageUrl" placeholder="Pega el enlace web de la foto..." class="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="updateFormPreview(this.value)">
+              <span class="text-slate-400">o</span>
+              <label class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg cursor-pointer transition">
+                <i data-lucide="image" class="w-4 h-4 inline mr-1"></i> Subir
+                <input type="file" id="formImageFile" accept="image/*" class="hidden" onchange="handleImageFileUpload(event, 'formImageUrl')">
+              </label>
+            </div>
+            <div id="formImagePreviewContainer" class="hidden flex items-center gap-3 p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <img id="formImagePreview" src="" alt="Previa" class="w-12 h-12 object-cover rounded-md border border-slate-200">
+              <span class="text-[11px] text-slate-500">Vista previa cargada</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Enlaces y Producción -->
+        <div class="space-y-4 pt-2 border-t border-slate-100">
+          <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Enlaces & Taller</h3>
+
+          <div>
+            <label class="block font-medium text-slate-700 mb-1">Enlace a Google Drive (Archivos de Impresión/Taller)</label>
+            <div class="relative">
+              <i data-lucide="folder" class="w-4 h-4 text-emerald-600 absolute left-3 top-1/2 -translate-y-1/2"></i>
+              <input type="url" id="formDriveUrl" placeholder="https://drive.google.com/..." class="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block font-medium text-slate-700 mb-1">Enlace Mercado Libre</label>
+              <input type="url" id="formUrlMl" placeholder="https://articulo.mercadolibre..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block font-medium text-slate-700 mb-1">Enlace TikTok Shop</label>
+              <input type="url" id="formUrlTiktok" placeholder="https://shop.tiktok..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block font-medium text-slate-700 mb-1">Enlace Amazon</label>
+              <input type="url" id="formUrlAmazon" placeholder="https://amazon..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- Títulos Ocultos para Búsqueda -->
+        <div class="space-y-3 pt-2 border-t border-slate-100">
+          <button type="button" onclick="toggleExtraTitles()" class="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1">
+            <span id="titlesToggleText">+ Agregar títulos alternativos por plataforma (opcional)</span>
+          </button>
+          <div id="extraTitlesContainer" class="hidden space-y-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div>
+              <label class="block font-medium text-slate-600 mb-0.5">Título en Mercado Libre</label>
+              <input type="text" id="formTitleMl" placeholder="Título exacto en ML..." class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg">
+            </div>
+            <div>
+              <label class="block font-medium text-slate-600 mb-0.5">Título en TikTok Shop</label>
+              <input type="text" id="formTitleTiktok" placeholder="Título exacto en TikTok..." class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg">
+            </div>
+            <div>
+              <label class="block font-medium text-slate-600 mb-0.5">Título en Amazon</label>
+              <input type="text" id="formTitleAmazon" placeholder="Título exacto en Amazon..." class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg">
+            </div>
+          </div>
+        </div>
+
+        <!-- Estructura de SKUs -->
+        <div class="space-y-4 pt-2 border-t border-slate-100">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Estructura de SKUs</h3>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="formHasVariants" class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" onchange="toggleVariantMode()">
+              <span class="font-medium text-slate-700">¿Tiene variantes (tallas o colores)?</span>
+            </label>
+          </div>
+
+          <!-- MODO 1: Producto Único (1 solo SKU directo) -->
+          <div id="singleSkuSection" class="space-y-2">
+            <label class="block font-medium text-slate-700">SKU Único del Producto *</label>
+            <input type="text" id="formSingleSku" placeholder="Ej: 1J-6EIQ-3CLV" class="w-full px-3 py-2 text-sm uppercase font-mono border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="checkSingleSkuDuplicate(this.value)">
+            <p id="singleSkuError" class="hidden text-xs text-rose-600 font-medium flex items-center gap-1">
+              <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> <span>¡Este SKU ya existe en otro producto!</span>
+            </p>
+          </div>
+
+          <!-- MODO 2: Variantes (Hijos con SKU obligatorio; el Padre no lleva) -->
+          <div id="variantsSection" class="hidden space-y-3">
+            <div class="flex items-center justify-between">
+              <p class="text-slate-500 text-[11px]">Cada talla o color lleva su SKU físico. El diseño principal no lleva SKU ficticio.</p>
+              <button type="button" onclick="copyMainImageToVariants()" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-[11px] transition">
+                Copiar foto principal a variantes
+              </button>
+            </div>
+
+            <div id="variantsList" class="space-y-2">
+              <!-- Filas dinámicas -->
+            </div>
+
+            <button type="button" onclick="addVariantRow()" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-semibold">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Agregar variante (talla o color)
+            </button>
+          </div>
+        </div>
+
+        <div id="formGeneralError" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs font-medium"></div>
+
+        <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
+          <button type="button" onclick="closeModalForm()" class="px-4 py-2 border border-slate-200 text-slate-600 font-medium rounded-lg hover:bg-slate-50 transition">Cancelar</button>
+          <button type="submit" id="btnSubmitForm" class="px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 shadow-sm transition">Guardar Producto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: FICHA TÉCNICA DE DETALLE -->
+  <div id="modalDetail" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-200">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+          <i data-lucide="info" class="w-4 h-4 text-blue-600"></i>
+          <span>Ficha Técnica de Producción</span>
+        </h2>
+        <div class="flex items-center gap-1">
+          <button type="button" id="btnDetailEdit" class="text-blue-600 hover:text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-lg hover:bg-blue-50 transition">
+            Editar Todo
+          </button>
+          <button type="button" onclick="closeModalDetail()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
         </div>
       </div>
 
-      <div class="space-y-3 flex-1 w-full">
+      <div class="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
+        <!-- Encabezado con Foto y Datos Físicos -->
+        <div class="flex flex-col sm:flex-row gap-5 items-start">
+          <div class="relative group cursor-pointer w-full sm:w-40 h-40 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 flex-shrink-0" onclick="openLightboxFromDetail()">
+            <img id="detailImage" src="" alt="" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition">
+              <i data-lucide="maximize-2" class="w-6 h-6 mb-1"></i>
+              <span class="text-[10px] font-medium">Ver en grande</span>
+            </div>
+          </div>
+
+          <div class="space-y-3 flex-1 w-full">
+            <div>
+              <h3 id="detailName" class="text-base font-bold text-slate-900"></h3>
+              <p id="detailMatchBadge" class="hidden mt-1 inline-block px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-semibold text-[11px]"></p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-center">
+              <div>
+                <span class="text-slate-400 text-[10px] block">Marca</span>
+                <span id="detailBrand" class="font-semibold text-slate-700">-</span>
+              </div>
+              <div>
+                <span class="text-slate-400 text-[10px] block">Modelo</span>
+                <span id="detailModel" class="font-semibold text-slate-700">-</span>
+              </div>
+              <div>
+                <span class="text-slate-400 text-[10px] block">Color Base</span>
+                <span id="detailColor" class="font-semibold text-slate-700">-</span>
+              </div>
+            </div>
+
+            <!-- Botón de Drive destacado para taller -->
+            <div id="detailDriveContainer">
+              <a id="detailDriveBtn" href="#" target="_blank" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-sm transition">
+                <i data-lucide="folder" class="w-4 h-4"></i>
+                <span>Abrir diseño en Google Drive</span>
+              </a>
+              <p id="detailDriveMissing" class="hidden text-slate-400 text-[11px] italic text-center">Sin enlace a Google Drive asignado</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones a Marketplaces -->
         <div>
-          <h3 id="detailName" class="text-base font-bold text-slate-900"></h3>
-          <p id="detailMatchBadge" class="hidden mt-1 inline-block px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-semibold text-[11px]"></p>
-        </div>
-
-        <div class="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-          <div>
-            <span class="text-slate-400 text-[10px] block">Marca</span>
-            <span id="detailBrand" class="font-semibold text-slate-700">-</span>
-          </div>
-          <div>
-            <span class="text-slate-400 text-[10px] block">Modelo</span>
-            <span id="detailModel" class="font-semibold text-slate-700">-</span>
-          </div>
-          <div>
-            <span class="text-slate-400 text-[10px] block">Color Base</span>
-            <span id="detailColor" class="font-semibold text-slate-700">-</span>
+          <h4 class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Publicaciones en Tiendas</h4>
+          <div class="flex flex-wrap gap-2" id="detailMarketplaceLinks">
+            <!-- Botones dinámicos -->
           </div>
         </div>
 
-        <!-- Botón Directo Google Drive -->
-        <div id="detailDriveContainer">
-          <a id="detailDriveBtn" href="#" target="_blank" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-sm transition">
-            <i data-lucide="folder" class="w-4 h-4"></i>
-            <span>Abrir diseño en Google Drive</span>
-          </a>
-          <p id="detailDriveMissing" class="hidden text-slate-400 text-[11px] italic text-center">Sin enlace a Drive asignado</p>
+        <!-- Tabla de Variantes & SKUs -->
+        <div>
+          <h4 class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Variantes & SKUs de Inventario</h4>
+          <div id="detailVariantsContainer" class="border border-slate-200 rounded-xl overflow-hidden">
+            <!-- Tabla dinámica -->
+          </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Enlaces Marketplace -->
-    <div>
-      <h4 class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Publicaciones en Tiendas</h4>
-      <div class="flex flex-wrap gap-2" id="detailMarketplaceLinks">
-        <!-- Botones dinámicos -->
-      </div>
-    </div>
-
-    <!-- Variantes / SKUs -->
-    <div>
-      <h4 class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Variantes & SKUs de Inventario</h4>
-      <div id="detailVariantsContainer" class="border border-slate-200 rounded-xl overflow-hidden">
-        <!-- Tabla dinámica -->
       </div>
     </div>
   </div>
-</div>
+
+  <!-- MODAL: EDICIÓN RÁPIDA DE ENLACES (DRIVE Y MARKETPLACES) -->
+  <div id="modalLinks" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+          <i data-lucide="link" class="w-4 h-4 text-blue-600"></i>
+          <span>Editar Enlaces</span>
+        </h3>
+        <button type="button" onclick="closeModalLinks()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="linksForm" class="p-5 space-y-4 text-xs">
+        <input type="hidden" id="quickLinksProductId">
+
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">Google Drive (Archivo de impresión)</label>
+          <input type="url" id="quickLinkDrive" placeholder="https://drive.google.com/..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">Mercado Libre</label>
+          <input type="url" id="quickLinkMl" placeholder="https://articulo.mercadolibre..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">TikTok Shop</label>
+          <input type="url" id="quickLinkTiktok" placeholder="https://shop.tiktok..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">Amazon</label>
+          <input type="url" id="quickLinkAmazon" placeholder="https://amazon..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
+          <button type="button" onclick="closeModalLinks()" class="px-4 py-2 border border-slate-200 text-slate-600 font-medium rounded-lg hover:bg-slate-50 transition">Cancelar</button>
+          <button type="submit" class="px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 shadow-sm transition">Guardar Enlaces</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- LIGHTBOX: VISOR DE IMAGEN A PANTALLA COMPLETA -->
+  <div id="lightboxModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-[60] flex items-center justify-center p-4" onclick="closeLightbox()">
+    <button type="button" class="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition" onclick="closeLightbox()">
+      <i data-lucide="x" class="w-6 h-6"></i>
+    </button>
+    <div class="max-w-4xl max-h-[90vh] flex flex-col items-center" onclick="event.stopPropagation()">
+      <img id="lightboxImage" src="" alt="Zoom" class="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl border border-white/10">
+      <p id="lightboxCaption" class="mt-2 text-white/80 text-xs font-medium"></p>
+    </div>
+  </div>
+
+  <!-- LÓGICA PRINCIPAL DE LA APLICACIÓN -->
+  <script>
+    // Catálogo en memoria local (sincronizado con Firestore en tiempo real)
+    let products = [];
+    let currentDetailProduct = null;
+    let unsubscribeFirestore = null;
+
+    // Catálogo precargado de muestra (se sube si Firestore está vacío al iniciar)
+    const initialSeed = [
+      {
+        id: "prod-playera-newjeans",
+        name: "Playera Newjeans Hyein Bunnies",
+        brand: "Optima",
+        model: "Algodón Peinado Premium",
+        color: "Negra",
+        image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80",
+        hasVariants: true,
+        hasClip: true,
+        driveUrl: "https://drive.google.com",
+        channels: {
+          ml: "https://mercadolibre.com",
+          tiktok: "https://tiktok.com",
+          amazon: "https://amazon.com"
+        },
+        titles: {
+          ml: "Playera Newjeans Bunnies Kpop Algodón Unisex Moda",
+          tiktok: "Camiseta Newjeans Hyein Estilo Coreano Oversize",
+          amazon: "Playera Estampada Manga Corta Banda Kpop"
+        },
+        variants: [
+          { id: "v1", name: "Talla CH", sku: "P-APP-K-HNJ-CH", image: "" },
+          { id: "v2", name: "Talla M", sku: "P-APP-K-HNJ-M", image: "" },
+          { id: "v3", name: "Talla G", sku: "P-APP-K-HNJ-G", image: "" },
+          { id: "v4", name: "Talla EG", sku: "P-APP-K-HNJ-EG", image: "" },
+          { id: "v5", name: "Talla EEG", sku: "P-APP-K-HNJ-EEG", image: "" }
+        ]
+      },
+      {
+        id: "prod-gorra-sanandreas",
+        name: "Gorra San Andreas Bordada",
+        brand: "Explosion",
+        model: "Bazuka",
+        color: "Multicolor",
+        image: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=800&auto=format&fit=crop&q=80",
+        hasVariants: true,
+        hasClip: false,
+        driveUrl: "https://drive.google.com",
+        channels: {
+          ml: "https://mercadolibre.com",
+          tiktok: "",
+          amazon: "https://amazon.com"
+        },
+        titles: {
+          ml: "Gorra San Andreas Bordado 3D Urbana Streetwear",
+          tiktok: "",
+          amazon: "Gorra Visera Curva San Andreas Ajustable"
+        },
+        variants: [
+          { id: "v201", name: "Gorra Negra", sku: "GOR-SA-NEG", image: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=800&auto=format&fit=crop&q=80" },
+          { id: "v202", name: "Gorra Azul Marino", sku: "GOR-SA-MAR", image: "https://images.unsplash.com/photo-1575428652377-a2d80e2277fc?w=800&auto=format&fit=crop&q=80" },
+          { id: "v203", name: "Gorra Beige", sku: "GOR-SA-BEI", image: "https://images.unsplash.com/photo-1534215754734-18e55d13e346?w=800&auto=format&fit=crop&q=80" }
+        ]
+      },
+      {
+        id: "prod-gorra-unitalla-classic",
+        name: "Gorra Minimalist Clean Unitalla",
+        brand: "Basic Cap",
+        model: "5001",
+        color: "Negra",
+        image: "https://images.unsplash.com/photo-1521369909029-2afed882baee?w=800&auto=format&fit=crop&q=80",
+        hasVariants: false,
+        singleSku: "1J-6EIQ-3CLV",
+        hasClip: true,
+        driveUrl: "https://drive.google.com",
+        channels: {
+          ml: "https://mercadolibre.com",
+          tiktok: "https://tiktok.com",
+          amazon: ""
+        },
+        titles: {
+          ml: "Gorra Negra Lisa Minimalista Calidad Premium",
+          tiktok: "Gorra Básica Lisa Ajustable",
+          amazon: ""
+        },
+        variants: []
+      }
+    ];
+
+    // INICIALIZACIÓN DE FIREBASE
+    window.addEventListener('firebase-ready', () => {
+      initFirestoreSync();
+    });
+
+    function initFirestoreSync() {
+      const { collection, onSnapshot, doc, setDoc } = window.firestoreTools;
+      const colRef = collection(window.db, "productos");
+
+      unsubscribeFirestore = onSnapshot(colRef, (snapshot) => {
+        if (snapshot.empty) {
+          // Si la base está vacía, sembramos los ejemplos iniciales
+          seedDatabase();
+          return;
+        }
+
+        const cloudData = [];
+        snapshot.forEach(docSnap => {
+          cloudData.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        products = cloudData;
+        renderProducts();
+        updateGlobalCounters();
+      }, (error) => {
+        console.error("Error al escuchar Firestore:", error);
+        document.getElementById('cloudStatusBadge').innerHTML = `
+          <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+          Error de conexión a la nube
+        `;
+      });
+    }
+
+    async function seedDatabase() {
+      const { doc, setDoc } = window.firestoreTools;
+      for (const item of initialSeed) {
+        await setDoc(doc(window.db, "productos", item.id), item);
+      }
+    }
+
+    // PERSISTENCIA EN LA NUBE
+    async function saveProductToCloud(product) {
+      const { doc, setDoc } = window.firestoreTools;
+      await setDoc(doc(window.db, "productos", product.id), product);
+    }
+
+    async function deleteProductFromCloud(productId) {
+      const { doc, deleteDoc } = window.firestoreTools;
+      await deleteDoc(doc(window.db, "productos", productId));
+    }
+
+    // LISTAR TODOS LOS SKUS PARA DETECCIÓN DE DUPLICADOS
+    function getAllRegisteredSkus(excludeProductId = null) {
+      const skus = new Set();
+      products.forEach(p => {
+        if (excludeProductId && p.id === excludeProductId) return;
+        if (!p.hasVariants && p.singleSku) {
+          skus.add(p.singleSku.trim().toUpperCase());
+        }
+        if (p.hasVariants && Array.isArray(p.variants)) {
+          p.variants.forEach(v => {
+            if (v.sku) skus.add(v.sku.trim().toUpperCase());
+          });
+        }
+      });
+      return skus;
+    }
+
+    // RENDERIZADO DEL CATÁLOGO
+    function renderProducts() {
+      const grid = document.getElementById('productGrid');
+      const emptyState = document.getElementById('emptyState');
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+
+      grid.innerHTML = '';
+
+      const filtered = products.filter(p => {
+        if (!query) return true;
+
+        // Búsqueda en Padre (Nombre, Marca, Modelo, Color, Títulos)
+        const matchPadre = (p.name || '').toLowerCase().includes(query) ||
+                           (p.brand || '').toLowerCase().includes(query) ||
+                           (p.model || '').toLowerCase().includes(query) ||
+                           (p.color || '').toLowerCase().includes(query) ||
+                           (p.titles?.ml || '').toLowerCase().includes(query) ||
+                           (p.titles?.tiktok || '').toLowerCase().includes(query) ||
+                           (p.titles?.amazon || '').toLowerCase().includes(query);
+
+        // Búsqueda en SKU Único
+        const matchSingleSku = !p.hasVariants && (p.singleSku || '').toLowerCase().includes(query);
+
+        // Búsqueda en Variantes (SKU Hijo o Nombre de talla/color)
+        const matchHijo = p.hasVariants && (p.variants || []).some(v => 
+          (v.sku || '').toLowerCase().includes(query) || 
+          (v.name || '').toLowerCase().includes(query)
+        );
+
+        return matchPadre || matchSingleSku || matchHijo;
+      });
+
+      if (filtered.length === 0) {
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+      }
+
+      filtered.forEach(p => {
+        // Encontrar si hubo coincidencia exacta con un SKU hijo para destacarlo
+        let matchedVariant = null;
+        if (query && p.hasVariants && p.variants) {
+          matchedVariant = p.variants.find(v => 
+            v.sku.toLowerCase().includes(query) || 
+            v.name.toLowerCase().includes(query)
+          );
+        }
+
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-2xl p-4 border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between";
+
+        // Miniatura y datos principales
+        const displayImage = (matchedVariant && matchedVariant.image) ? matchedVariant.image : (p.image || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80');
+
+        card.innerHTML = `
+          <div>
+            <!-- Fila superior: Foto + Título y Badges -->
+            <div class="flex gap-3 items-start cursor-pointer" onclick="openProductDetail('${p.id}', '${matchedVariant ? matchedVariant.sku : ''}')">
+              <div class="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 border border-slate-200 relative group">
+                <img src="${displayImage}" alt="${p.name}" class="w-full h-full object-cover">
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <h3 class="font-bold text-sm text-slate-800 truncate" title="${p.name}">${p.name}</h3>
+                
+                <div class="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500 truncate">
+                  <span>${p.brand || 'Sin marca'}</span>
+                  ${p.model ? `<span>• ${p.model}</span>` : ''}
+                </div>
+
+                <!-- Detalle de SKUs -->
+                <div class="mt-2">
+                  ${p.hasVariants 
+                    ? (matchedVariant 
+                        ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                             <i data-lucide="check" class="w-3 h-3 text-amber-600"></i> ${matchedVariant.name}: ${matchedVariant.sku}
+                           </span>`
+                        : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-600">
+                             <i data-lucide="layers" class="w-3 h-3"></i> ${p.variants?.length || 0} variantes (tallas/colores)
+                           </span>`
+                      )
+                    : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                         SKU: ${p.singleSku || 'Sin SKU'}
+                       </span>`
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Botones de Marketplaces -->
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1.5">
+              ${renderMarketplaceButton('ML', p.channels?.ml, 'bg-amber-500 hover:bg-amber-600')}
+              ${renderMarketplaceButton('TikTok', p.channels?.tiktok, 'bg-black hover:bg-neutral-800')}
+              ${renderMarketplaceButton('Amazon', p.channels?.amazon, 'bg-orange-500 hover:bg-orange-600')}
+            </div>
+          </div>
+
+          <!-- Pie de tarjeta: Clip + Botón de Links -->
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+            <button 
+              type="button" 
+              onclick="toggleClipStatus('${p.id}')"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
+                p.hasClip 
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100' 
+                  : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
+              }"
+            >
+              <i data-lucide="${p.hasClip ? 'check-circle-2' : 'clock'}" class="w-3.5 h-3.5"></i>
+              <span>Clip: ${p.hasClip ? 'OK' : 'Pendiente'}</span>
+            </button>
+
+            <div class="flex items-center gap-1">
+              <button 
+                type="button" 
+                onclick="openQuickLinksModal('${p.id}')"
+                title="Editar links de tiendas y Drive"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition"
+              >
+                <i data-lucide="link" class="w-3.5 h-3.5"></i>
+                <span>Links</span>
+              </button>
+            </div>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+
+    function renderMarketplaceButton(label, url, activeClasses) {
+      if (url && url.trim()) {
+        return `
+          <a href="${url}" target="_blank" class="px-2.5 py-1 rounded-md text-[11px] font-bold text-white shadow-xs transition ${activeClasses}">
+            ${label}
+          </a>
+        `;
+      }
+      return `
+        <span class="px-2.5 py-1 rounded-md text-[11px] font-semibold text-slate-400 bg-slate-100 cursor-not-allowed">
+          ${label}
+        </span>
+      `;
+    }
+
+    function updateGlobalCounters() {
+      document.getElementById('productCount').textContent = `${products.length} productos`;
+      
+      let skuTotal = 0;
+      products.forEach(p => {
+        if (!p.hasVariants && p.singleSku) skuTotal++;
+        if (p.hasVariants && p.variants) skuTotal += p.variants.length;
+      });
+      document.getElementById('skuCount').textContent = `${skuTotal} SKUs registrados`;
+    }
+
+    // BÚSQUEDA EN TIEMPO REAL
+    const searchInput = document.getElementById('searchInput');
+    const btnClearSearch = document.getElementById('btnClearSearch');
+
+    searchInput.addEventListener('input', () => {
+      if (searchInput.value.trim()) {
+        btnClearSearch.classList.remove('hidden');
+      } else {
+        btnClearSearch.classList.add('hidden');
+      }
+      renderProducts();
+    });
+
+    btnClearSearch.addEventListener('click', () => {
+      searchInput.value = '';
+      btnClearSearch.classList.add('hidden');
+      renderProducts();
+    });
+
+    // TOGGLE RÁPIDO DE CLIP
+    window.toggleClipStatus = async function(productId) {
+      const p = products.find(x => x.id === productId);
+      if (!p) return;
+      const newStatus = !p.hasClip;
+      p.hasClip = newStatus;
+      renderProducts();
+      await saveProductToCloud(p);
+    };
+
+    // MODAL DE DETALLE (FICHA TÉCNICA)
+    window.openProductDetail = function(productId, highlightSku = '') {
+      const p = products.find(x => x.id === productId);
+      if (!p) return;
+      currentDetailProduct = p;
+
+      document.getElementById('detailName').textContent = p.name;
+      document.getElementById('detailBrand').textContent = p.brand || '-';
+      document.getElementById('detailModel').textContent = p.model || '-';
+      document.getElementById('detailColor').textContent = p.color || '-';
+
+      const imgEl = document.getElementById('detailImage');
+      imgEl.src = p.image || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80';
+
+      const matchBadge = document.getElementById('detailMatchBadge');
+      if (highlightSku) {
+        matchBadge.textContent = `Coincidencia encontrada con el SKU: ${highlightSku}`;
+        matchBadge.classList.remove('hidden');
+      } else {
+        matchBadge.classList.add('hidden');
+      }
+
+      // Botón Google Drive
+      const driveBtn = document.getElementById('detailDriveBtn');
+      const driveMissing = document.getElementById('detailDriveMissing');
+      if (p.driveUrl && p.driveUrl.trim()) {
+        driveBtn.href = p.driveUrl;
+        driveBtn.classList.remove('hidden');
+        driveMissing.classList.add('hidden');
+      } else {
+        driveBtn.classList.add('hidden');
+        driveMissing.classList.remove('hidden');
+      }
+
+      // Enlaces Marketplace
+      const marketContainer = document.getElementById('detailMarketplaceLinks');
+      marketContainer.innerHTML = `
+        ${renderMarketplacePill('Mercado Libre', p.channels?.ml, 'bg-amber-500 hover:bg-amber-600 text-white')}
+        ${renderMarketplacePill('TikTok Shop', p.channels?.tiktok, 'bg-black hover:bg-neutral-800 text-white')}
+        ${renderMarketplacePill('Amazon', p.channels?.amazon, 'bg-orange-500 hover:bg-orange-600 text-white')}
+      `;
+
+      // Tabla de Variantes
+      const varContainer = document.getElementById('detailVariantsContainer');
+      if (p.hasVariants && p.variants && p.variants.length > 0) {
+        let rows = p.variants.map(v => {
+          const isSelected = highlightSku && v.sku.toLowerCase() === highlightSku.toLowerCase();
+          const hasImg = Boolean(v.image && v.image.trim());
+
+          return `
+            <div class="flex items-center justify-between p-3 border-b border-slate-100 last:border-b-0 ${isSelected ? 'bg-amber-50' : 'hover:bg-slate-50'} transition">
+              <div class="flex items-center gap-3">
+                ${hasImg ? `
+                  <div class="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 cursor-pointer group flex-shrink-0" onclick="openLightbox('${v.image}', '${v.name} (${v.sku})')">
+                    <img src="${v.image}" class="w-full h-full object-cover group-hover:scale-105 transition">
+                  </div>
+                ` : ''}
+                <div>
+                  <span class="font-bold text-slate-800 block text-xs">${v.name}</span>
+                  <span class="font-mono text-[11px] font-semibold text-slate-500">${v.sku}</span>
+                </div>
+              </div>
+
+              ${isSelected ? `
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-900">Coincidencia</span>
+              ` : ''}
+            </div>
+          `;
+        }).join('');
+
+        varContainer.innerHTML = rows;
+      } else {
+        varContainer.innerHTML = `
+          <div class="p-4 bg-slate-50 flex items-center justify-between">
+            <span class="text-slate-600">Producto único sin variantes</span>
+            <span class="font-mono font-bold text-blue-700 bg-blue-100 px-2.5 py-1 rounded text-xs">${p.singleSku || 'Sin SKU'}</span>
+          </div>
+        `;
+      }
+
+      document.getElementById('btnDetailEdit').onclick = () => {
+        closeModalDetail();
+        openEditProductForm(p.id);
+      };
+
+      document.getElementById('modalDetail').classList.remove('hidden');
+      lucide.createIcons();
+    };
+
+    window.closeModalDetail = function() {
+      document.getElementById('modalDetail').classList.add('hidden');
+    };
+
+    // LIGHTBOX: ZOOM A PANTALLA COMPLETA
+    window.openLightboxFromDetail = function() {
+      if (!currentDetailProduct) return;
+      openLightbox(currentDetailProduct.image, currentDetailProduct.name);
+    };
+
+    window.openLightbox = function(imgUrl, caption = '') {
+      if (!imgUrl) return;
+      document.getElementById('lightboxImage').src = imgUrl;
+      document.getElementById('lightboxCaption').textContent = caption;
+      document.getElementById('lightboxModal').classList.remove('hidden');
+      lucide.createIcons();
+    };
+
+    window.closeLightbox = function() {
+      document.getElementById('lightboxModal').classList.add('hidden');
+    };
+
+    function renderMarketplacePill(label, url, activeStyle) {
+      if (url && url.trim()) {
+        return `
+          <a href="${url}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition ${activeStyle}">
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            <span>${label}</span>
+          </a>
+        `;
+      }
+      return `
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 bg-slate-100 cursor-not-allowed">
+          <span>${label} (No asignado)</span>
+        </span>
+      `;
+    }
+
+    // MODAL DE LINKS RÁPIDOS
+    window.openQuickLinksModal = function(productId) {
+      const p = products.find(x => x.id === productId);
+      if (!p) return;
+      document.getElementById('quickLinksProductId').value = p.id;
+      document.getElementById('quickLinkDrive').value = p.driveUrl || '';
+      document.getElementById('quickLinkMl').value = p.channels?.ml || '';
+      document.getElementById('quickLinkTiktok').value = p.channels?.tiktok || '';
+      document.getElementById('quickLinkAmazon').value = p.channels?.amazon || '';
+      document.getElementById('modalLinks').classList.remove('hidden');
+      lucide.createIcons();
+    };
+
+    window.closeModalLinks = function() {
+      document.getElementById('modalLinks').classList.add('hidden');
+    };
+
+    document.getElementById('linksForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('quickLinksProductId').value;
+      const p = products.find(x => x.id === id);
+      if (!p) return;
+
+      p.driveUrl = document.getElementById('quickLinkDrive').value.trim();
+      p.channels = {
+        ml: document.getElementById('quickLinkMl').value.trim(),
+        tiktok: document.getElementById('quickLinkTiktok').value.trim(),
+        amazon: document.getElementById('quickLinkAmazon').value.trim()
+      };
+
+      closeModalLinks();
+      renderProducts();
+      await saveProductToCloud(p);
+    });
+
+    // FORMULARIO: ALTA Y EDICIÓN COMPLETA
+    const modalForm = document.getElementById('modalForm');
+    const productForm = document.getElementById('productForm');
+
+    document.getElementById('btnOpenNew').addEventListener('click', () => {
+      openNewProductForm();
+    });
+
+    function openNewProductForm() {
+      document.getElementById('modalFormTitle').innerHTML = `
+        <i data-lucide="package-plus" class="w-4 h-4 text-blue-600"></i>
+        <span>Registrar Nuevo Producto</span>
+      `;
+      productForm.reset();
+      document.getElementById('formProductId').value = '';
+      document.getElementById('formHasVariants').checked = true;
+      toggleVariantMode();
+
+      // Cargar plantilla de tallas por defecto
+      clearVariantRows();
+      addVariantRow("Talla CH", "");
+      addVariantRow("Talla M", "");
+      addVariantRow("Talla G", "");
+      addVariantRow("Talla EG", "");
+
+      document.getElementById('formImagePreviewContainer').classList.add('hidden');
+      document.getElementById('formGeneralError').classList.add('hidden');
+      modalForm.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function openEditProductForm(productId) {
+      const p = products.find(x => x.id === productId);
+      if (!p) return;
+
+      document.getElementById('modalFormTitle').innerHTML = `
+        <i data-lucide="edit-3" class="w-4 h-4 text-blue-600"></i>
+        <span>Editar Producto</span>
+      `;
+      document.getElementById('formProductId').value = p.id;
+      document.getElementById('formName').value = p.name || '';
+      document.getElementById('formBrand').value = p.brand || '';
+      document.getElementById('formModel').value = p.model || '';
+      document.getElementById('formColor').value = p.color || '';
+      document.getElementById('formImageUrl').value = p.image || '';
+      updateFormPreview(p.image);
+
+      document.getElementById('formDriveUrl').value = p.driveUrl || '';
+      document.getElementById('formUrlMl').value = p.channels?.ml || '';
+      document.getElementById('formUrlTiktok').value = p.channels?.tiktok || '';
+      document.getElementById('formUrlAmazon').value = p.channels?.amazon || '';
+
+      document.getElementById('formTitleMl').value = p.titles?.ml || '';
+      document.getElementById('formTitleTiktok').value = p.titles?.tiktok || '';
+      document.getElementById('formTitleAmazon').value = p.titles?.amazon || '';
+
+      const hasVars = Boolean(p.hasVariants);
+      document.getElementById('formHasVariants').checked = hasVars;
+      toggleVariantMode();
+
+      if (!hasVars) {
+        document.getElementById('formSingleSku').value = p.singleSku || '';
+      } else {
+        clearVariantRows();
+        if (p.variants && p.variants.length > 0) {
+          p.variants.forEach(v => addVariantRow(v.name, v.sku, v.image));
+        } else {
+          addVariantRow("Talla CH", "");
+        }
+      }
+
+      document.getElementById('formGeneralError').classList.add('hidden');
+      modalForm.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    window.closeModalForm = function() {
+      modalForm.classList.add('hidden');
+    };
+
+    window.toggleVariantMode = function() {
+      const isVariants = document.getElementById('formHasVariants').checked;
+      const singleSection = document.getElementById('singleSkuSection');
+      const variantsSection = document.getElementById('variantsSection');
+
+      if (isVariants) {
+        singleSection.classList.add('hidden');
+        variantsSection.classList.remove('hidden');
+      } else {
+        singleSection.classList.remove('hidden');
+        variantsSection.classList.add('hidden');
+      }
+    };
+
+    window.toggleExtraTitles = function() {
+      const container = document.getElementById('extraTitlesContainer');
+      const text = document.getElementById('titlesToggleText');
+      if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+        text.textContent = "- Ocultar variaciones de títulos";
+      } else {
+        container.classList.add('hidden');
+        text.textContent = "+ Agregar variaciones de títulos por plataforma (opcional)";
+      }
+    };
+
+    function clearVariantRows() {
+      document.getElementById('variantsList').innerHTML = '';
+    }
+
+    window.addVariantRow = function(name = "", sku = "", image = "") {
+      const container = document.getElementById('variantsList');
+      const rowId = 'var_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+
+      const row = document.createElement('div');
+      row.id = rowId;
+      row.className = "flex flex-col sm:flex-row items-center gap-2 p-2 bg-slate-50 rounded-xl border border-slate-200";
+
+      row.innerHTML = `
+        <input type="text" placeholder="Talla o Color (ej. CH o Azul)" value="${name}" class="var-name w-full sm:w-1/3 px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none" required>
+        <input type="text" placeholder="SKU Hijo *" value="${sku}" class="var-sku w-full sm:w-1/3 px-2.5 py-1.5 text-xs uppercase font-mono bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none" required oninput="checkVariantRowDuplicates()">
+        <input type="text" placeholder="URL Foto variante (opcional)" value="${image}" class="var-image w-full sm:w-1/3 px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none">
+        
+        <button type="button" onclick="document.getElementById('${rowId}').remove(); checkVariantRowDuplicates();" class="text-slate-400 hover:text-rose-600 p-1">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      `;
+
+      container.appendChild(row);
+      lucide.createIcons();
+    };
+
+    window.copyMainImageToVariants = function() {
+      const mainImg = document.getElementById('formImageUrl').value.trim();
+      if (!mainImg) {
+        alert("Primero coloca una imagen principal arriba.");
+        return;
+      }
+      document.querySelectorAll('#variantsList .var-image').forEach(input => {
+        input.value = mainImg;
+      });
+    };
+
+    window.updateFormPreview = function(url) {
+      const container = document.getElementById('formImagePreviewContainer');
+      const img = document.getElementById('formImagePreview');
+      if (url && url.trim()) {
+        img.src = url;
+        container.classList.remove('hidden');
+      } else {
+        container.classList.add('hidden');
+      }
+    };
+
+    window.handleImageFileUpload = function(e, targetInputId) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target.result;
+        document.getElementById(targetInputId).value = base64;
+        updateFormPreview(base64);
+      };
+      reader.readAsDataURL(file);
+    };
+
+    // VALIDACIÓN DE SKUs DUPLICADOS
+    window.checkSingleSkuDuplicate = function(val) {
+      const currentId = document.getElementById('formProductId').value;
+      const clean = val.trim().toUpperCase();
+      const errorEl = document.getElementById('singleSkuError');
+      if (!clean) {
+        errorEl.classList.add('hidden');
+        return;
+      }
+
+      const allSkus = getAllRegisteredSkus(currentId);
+      if (allSkus.has(clean)) {
+        errorEl.classList.remove('hidden');
+      } else {
+        errorEl.classList.add('hidden');
+      }
+    };
+
+    window.checkVariantRowDuplicates = function() {
+      const currentId = document.getElementById('formProductId').value;
+      const allSkus = getAllRegisteredSkus(currentId);
+      const rows = document.querySelectorAll('#variantsList > div');
+      const localSkus = new Set();
+      let hasDupe = false;
+
+      rows.forEach(r => {
+        const skuInput = r.querySelector('.var-sku');
+        const skuVal = skuInput.value.trim().toUpperCase();
+        if (!skuVal) return;
+
+        if (allSkus.has(skuVal) || localSkus.has(skuVal)) {
+          skuInput.classList.add('border-rose-500', 'bg-rose-50');
+          hasDupe = true;
+        } else {
+          skuInput.classList.remove('border-rose-500', 'bg-rose-50');
+          localSkus.add(skuVal);
+        }
+      });
+
+      const generalErr = document.getElementById('formGeneralError');
+      if (hasDupe) {
+        generalErr.textContent = "Alerta: Tienes SKUs repetidos o ya existentes en la base de datos.";
+        generalErr.classList.remove('hidden');
+      } else {
+        generalErr.classList.add('hidden');
+      }
+    };
+
+    // GUARDADO DEL FORMULARIO
+    productForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const id = document.getElementById('formProductId').value || ('prod-' + Date.now());
+      const name = document.getElementById('formName').value.trim();
+      const brand = document.getElementById('formBrand').value.trim();
+      const model = document.getElementById('formModel').value.trim();
+      const color = document.getElementById('formColor').value.trim();
+      const image = document.getElementById('formImageUrl').value.trim();
+
+      const driveUrl = document.getElementById('formDriveUrl').value.trim();
+      const channels = {
+        ml: document.getElementById('formUrlMl').value.trim(),
+        tiktok: document.getElementById('formUrlTiktok').value.trim(),
+        amazon: document.getElementById('formUrlAmazon').value.trim()
+      };
+
+      const titles = {
+        ml: document.getElementById('formTitleMl').value.trim(),
+        tiktok: document.getElementById('formTitleTiktok').value.trim(),
+        amazon: document.getElementById('formTitleAmazon').value.trim()
+      };
+
+      const hasVariants = document.getElementById('formHasVariants').checked;
+      let singleSku = "";
+      let variants = [];
+
+      const registeredSkus = getAllRegisteredSkus(id);
+
+      if (!hasVariants) {
+        singleSku = document.getElementById('formSingleSku').value.trim().toUpperCase();
+        if (!singleSku) {
+          alert("Debes asignar un SKU al producto.");
+          return;
+        }
+        if (registeredSkus.has(singleSku)) {
+          alert(`El SKU "${singleSku}" ya está en uso. Elige uno diferente.`);
+          return;
+        }
+      } else {
+        const rows = document.querySelectorAll('#variantsList > div');
+        if (rows.length === 0) {
+          alert("Agrega al menos una variante con su SKU.");
+          return;
+        }
+
+        const localSeen = new Set();
+        for (const r of rows) {
+          const vName = r.querySelector('.var-name').value.trim();
+          const vSku = r.querySelector('.var-sku').value.trim().toUpperCase();
+          const vImg = r.querySelector('.var-image').value.trim();
+
+          if (!vSku) {
+            alert("Cada variante debe tener un SKU asignado.");
+            return;
+          }
+          if (registeredSkus.has(vSku) || localSeen.has(vSku)) {
+            alert(`El SKU "${vSku}" ya existe en el catálogo.`);
+            return;
+          }
+          localSeen.add(vSku);
+
+          variants.push({
+            id: 'v_' + Math.random().toString(36).substr(2, 6),
+            name: vName,
+            sku: vSku,
+            image: vImg
+          });
+        }
+      }
+
+      // Preservar estatus de clip si ya existía
+      const existing = products.find(x => x.id === id);
+      const hasClip = existing ? existing.hasClip : false;
+
+      const productPayload = {
+        id,
+        name,
+        brand,
+        model,
+        color,
+        image,
+        driveUrl,
+        channels,
+        titles,
+        hasVariants,
+        singleSku,
+        variants,
+        hasClip
+      };
+
+      closeModalForm();
+      await saveProductToCloud(productPayload);
+    });
+
+    // EXPORTAR / IMPORTAR RESPALDOS JSON
+    document.getElementById('btnExport').addEventListener('click', () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(products, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `respaldo_catalogo_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    });
+
+    document.getElementById('fileImport').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const parsed = JSON.parse(event.target.result);
+          if (Array.isArray(parsed)) {
+            if (confirm(`Se encontraron ${parsed.length} productos en el archivo. ¿Deseas subirlos a Firestore?`)) {
+              for (const p of parsed) {
+                await saveProductToCloud(p);
+              }
+              alert("Importación completada con éxito en la nube.");
+            }
+          } else {
+            alert("El archivo no tiene el formato de catálogo esperado.");
+          }
+        } catch (err) {
+          alert("Error al leer el archivo JSON: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // Inicializar íconos Lucide
+    lucide.createIcons();
+  </script>
+</body>
+</html>
