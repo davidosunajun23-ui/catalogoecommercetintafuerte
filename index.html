@@ -26,6 +26,7 @@
       cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
     .btn-remove-thumb:hover { background: #dc2626; }
+    .sku-duplicate { border-color: #ef4444 !important; background-color: #fef2f2 !important; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important; }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen p-4 md:p-8">
@@ -35,7 +36,7 @@
   <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-black text-slate-900 tracking-tight">Catálogo E-commerce & Taller</h1>
-      <p class="text-sm text-slate-500">Gestión de SKUs, Tallas, Colores, Títulos por Marketplace y Drive</p>
+      <p class="text-sm text-slate-500">Gestión de SKUs Únicos, Tallas, Colores, Títulos por Marketplace y Drive</p>
     </div>
     <div class="flex items-center gap-3">
       <button onclick="openCreateModal()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition">
@@ -64,6 +65,12 @@
       <button onclick="closeProductModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
     </div>
 
+    <!-- BANNER DE ALERTA GLOBAL DE SKU DUPLICADO -->
+    <div id="skuGlobalAlert" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-semibold flex items-center gap-2">
+      <span class="text-base">⚠️</span>
+      <span id="skuGlobalAlertText">Hay uno o más SKUs duplicados en el formulario. Corrige los campos marcados en rojo antes de guardar.</span>
+    </div>
+
     <form id="productForm" onsubmit="saveProduct(event)" class="space-y-4">
       <input type="hidden" id="editProductId" />
 
@@ -75,11 +82,11 @@
       <div class="grid grid-cols-3 gap-3">
         <div>
           <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Marca</label>
-          <input type="text" id="pBrand" placeholder="Optima / Yupoong" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <input type="text" id="pBrand" placeholder="Optima / Yupoong / Kamel" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Modelo base</label>
-          <input type="text" id="pModel" placeholder="Peinado / 6606" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <input type="text" id="pModel" placeholder="Peinado / 6606 / 804" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Color base</label>
@@ -159,7 +166,8 @@
         <!-- Producto Único -->
         <div id="singleSkuWrap" class="hidden">
           <label class="block text-xs font-bold text-slate-700 uppercase mb-1">SKU Único del Producto *</label>
-          <input type="text" id="pSingleSku" placeholder="Ej. G-MACC-01" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <input type="text" id="pSingleSku" oninput="validateAllSkusLive()" placeholder="Ej. G-MACC-01" class="w-full text-sm font-mono uppercase border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <p id="singleSkuError" class="text-xs text-red-600 font-semibold mt-1 hidden"></p>
         </div>
 
         <!-- Lista de Variantes -->
@@ -412,8 +420,135 @@
     }
   };
 
+  // --- MOTOR DE VALIDACIÓN ESTRICTA DE SKUS DUPLICADOS ---
+  window.validateAllSkusLive = function() {
+    const editId = document.getElementById("editProductId").value;
+    const hasVariants = document.getElementById("pHasVariants").checked;
+    const submitBtn = document.getElementById("saveSubmitBtn");
+    const globalAlert = document.getElementById("skuGlobalAlert");
+    const globalAlertText = document.getElementById("skuGlobalAlertText");
+
+    let hasErrors = false;
+    let duplicateMessages = [];
+
+    // 1. Obtener catálogo existente excluyendo el producto en edición actual
+    const existingSkusMap = new Map(); // sku -> "Producto (Variante)"
+    products.forEach(p => {
+      if (p.id === editId) return; // ignorarse a sí mismo en edición
+      if (p.hasVariants && p.variants) {
+        p.variants.forEach(v => {
+          if (v.sku && v.sku.trim()) {
+            existingSkusMap.set(v.sku.trim().toUpperCase(), `${p.name} [${v.name}]`);
+          }
+        });
+      } else if (p.singleSku && p.singleSku.trim()) {
+        existingSkusMap.set(p.singleSku.trim().toUpperCase(), `${p.name} [Producto Único]`);
+      }
+    });
+
+    if (!hasVariants) {
+      // Validar producto único
+      const input = document.getElementById("pSingleSku");
+      const err = document.getElementById("singleSkuError");
+      const val = input.value.trim().toUpperCase();
+
+      input.classList.remove("sku-duplicate");
+      err.classList.add("hidden");
+      err.innerText = "";
+
+      if (val) {
+        if (existingSkusMap.has(val)) {
+          input.classList.add("sku-duplicate");
+          const conflict = existingSkusMap.get(val);
+          err.innerText = `Este SKU ya está registrado en: "${conflict}"`;
+          err.classList.remove("hidden");
+          hasErrors = true;
+          duplicateMessages.push(`El SKU "${val}" ya pertenece a "${conflict}"`);
+        }
+      }
+    } else {
+      // Validar variantes entre sí y contra la base de datos
+      const rows = document.querySelectorAll("#variantList .variant-row");
+      const currentFormSkus = new Map(); // sku -> array de inputs para detectar colisión interna
+
+      rows.forEach(r => {
+        const input = r.querySelector(".v-sku");
+        const val = input.value.trim().toUpperCase();
+        input.classList.remove("sku-duplicate");
+
+        // Quitar mensaje previo de error en la fila si existía
+        const existingMsg = r.querySelector(".v-sku-err");
+        if (existingMsg) existingMsg.remove();
+
+        if (val) {
+          if (!currentFormSkus.has(val)) currentFormSkus.set(val, []);
+          currentFormSkus.get(val).push({ input, row: r });
+        }
+      });
+
+      // A) Revisar duplicados entre las variantes del mismo producto
+      currentFormSkus.forEach((instances, sku) => {
+        if (instances.length > 1) {
+          hasErrors = true;
+          instances.forEach(({ input, row }) => {
+            input.classList.add("sku-duplicate");
+            addSkuRowError(row, `SKU repetido dentro de este mismo producto`);
+          });
+          duplicateMessages.push(`El SKU "${sku}" está repetido más de una vez en esta lista`);
+        }
+      });
+
+      // B) Revisar colisión contra el resto de la base de datos
+      currentFormSkus.forEach((instances, sku) => {
+        if (existingSkusMap.has(sku)) {
+          hasErrors = true;
+          const conflict = existingSkusMap.get(sku);
+          instances.forEach(({ input, row }) => {
+            input.classList.add("sku-duplicate");
+            addSkuRowError(row, `Ya existe en el catálogo: "${conflict}"`);
+          });
+          duplicateMessages.push(`El SKU "${sku}" ya existe en otro producto ("${conflict}")`);
+        }
+      });
+    }
+
+    // Actualizar estado del botón de guardado y banner de alerta
+    if (hasErrors) {
+      submitBtn.disabled = true;
+      submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+      globalAlert.classList.remove("hidden");
+      globalAlertText.innerText = duplicateMessages[0] || "Hay SKUs duplicados. Corrígelos antes de guardar.";
+    } else {
+      submitBtn.disabled = false;
+      submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
+      globalAlert.classList.add("hidden");
+    }
+
+    return !hasErrors;
+  };
+
+  function addSkuRowError(row, text) {
+    let msg = row.querySelector(".v-sku-err");
+    if (!msg) {
+      msg = document.createElement("div");
+      msg.className = "v-sku-err text-[11px] font-bold text-red-600 pl-1 mt-0.5 w-full";
+      row.after(msg);
+    }
+    msg.innerText = `⚠️ ${text}`;
+  }
+
   window.saveProduct = async function(e) {
     e.preventDefault();
+
+    // Verificación final estricta anti-duplicados
+    const isValid = validateAllSkusLive();
+    if (!isValid) {
+      alert("❌ NO SE PUEDE GUARDAR: Se detectaron SKUs duplicados en el catálogo o entre variantes. Revisa las casillas marcadas en rojo.");
+      const firstErr = document.querySelector(".sku-duplicate");
+      if (firstErr) firstErr.focus();
+      return;
+    }
+
     const btn = document.getElementById("saveSubmitBtn");
     btn.disabled = true;
     btn.innerText = "Guardando...";
@@ -430,12 +565,12 @@
         rows.forEach(r => {
           variants.push({
             name: r.querySelector(".v-name").value.trim(),
-            sku: r.querySelector(".v-sku").value.trim(),
+            sku: r.querySelector(".v-sku").value.trim().toUpperCase(),
             image: r.querySelector(".v-img").value.trim()
           });
         });
       } else {
-        singleSku = document.getElementById("pSingleSku").value.trim();
+        singleSku = document.getElementById("pSingleSku").value.trim().toUpperCase();
       }
 
       const data = {
@@ -478,9 +613,9 @@
     document.getElementById("mainImgThumbWrap").classList.add("hidden");
     document.getElementById("variantList").innerHTML = "";
     document.getElementById("pHasVariants").checked = true;
+    document.getElementById("skuGlobalAlert").classList.add("hidden");
     toggleVariantMode();
 
-    // Reset titulos personalizados
     document.getElementById("customTitlesWrap").classList.add("hidden");
     document.getElementById("customTitlesToggleIcon").innerText = "▼";
 
@@ -513,7 +648,6 @@
     document.getElementById("pTitleTiktok").value = p.titleTiktok || "";
     document.getElementById("pTitleAmazon").value = p.titleAmazon || "";
 
-    // Si tiene titulos personalizados, abrir el acordeón
     if (p.titleMl || p.titleTiktok || p.titleAmazon) {
       document.getElementById("customTitlesWrap").classList.remove("hidden");
       document.getElementById("customTitlesToggleIcon").innerText = "▲";
@@ -536,6 +670,9 @@
       }
     }
 
+    document.getElementById("skuGlobalAlert").classList.add("hidden");
+    validateAllSkusLive();
+
     document.getElementById("productModal").classList.remove("hidden");
     document.getElementById("productModal").classList.add("flex");
   };
@@ -550,14 +687,16 @@
     document.getElementById("singleSkuWrap").style.display = hasVariants ? "none" : "block";
     document.getElementById("variantsWrap").style.display = hasVariants ? "block" : "none";
     document.getElementById("btnCopyImg").style.display = hasVariants ? "inline-block" : "none";
+    validateAllSkusLive();
   };
 
+  // FILA DE VARIANTE CON LISTENER DE VALIDACIÓN ANTI-DUPLICADOS
   window.addVariantRow = function(name = "", sku = "", image = "") {
     const div = document.createElement("div");
     div.className = "variant-row flex items-center gap-2";
     div.innerHTML = `
       <input type="text" class="v-name w-1/4 text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Talla / Color" value="${name}" required />
-      <input type="text" class="v-sku w-1/4 text-sm font-mono border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase" placeholder="SKU Físico" value="${sku}" required />
+      <input type="text" class="v-sku w-1/4 text-sm font-mono border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase" placeholder="SKU Físico" value="${sku}" oninput="validateAllSkusLive()" required />
       <div class="flex-1 flex items-center gap-2">
         <input type="text" class="v-img flex-1 text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="URL Foto variante (opcional)" value="${image}" oninput="updateVarThumb(this)" />
         <input type="file" accept="image/*" class="hidden" onchange="handleVarFile(this)" />
@@ -567,11 +706,22 @@
           <span class="btn-remove-thumb" onclick="clearVariantPhoto(this)" title="Quitar solo la foto">&times;</span>
         </div>
       </div>
-      <button type="button" class="text-slate-400 hover:text-red-500 p-1" title="Eliminar SKU" onclick="this.closest('.variant-row').remove()">
+      <button type="button" class="text-slate-400 hover:text-red-500 p-1" title="Eliminar SKU" onclick="deleteVariantRow(this)">
         🗑
       </button>
     `;
     document.getElementById("variantList").appendChild(div);
+    validateAllSkusLive();
+  };
+
+  window.deleteVariantRow = function(btn) {
+    const row = btn.closest(".variant-row");
+    const nextErr = row.nextElementSibling;
+    if (nextErr && nextErr.classList.contains("v-sku-err")) {
+      nextErr.remove();
+    }
+    row.remove();
+    validateAllSkusLive();
   };
 
   window.clearVariantPhoto = function(btn) {
@@ -648,7 +798,6 @@
     });
   };
 
-  // COPIAR TEXTO RÁPIDO AL PORTAPAPELES
   window.copyText = function(text, btn) {
     navigator.clipboard.writeText(text).then(() => {
       const orig = btn.innerText;
@@ -686,7 +835,6 @@
       noDrive.style.display = "block";
     }
 
-    // RENDERIZAR TÍTULOS EN EL DETALLE SI EXISTEN
     const titlesSec = document.getElementById("detTitlesSection");
     const titlesList = document.getElementById("detTitlesList");
     let titlesHtml = "";
@@ -723,7 +871,6 @@
       titlesSec.classList.add("hidden");
     }
 
-    // VARIANTES
     const varList = document.getElementById("detVariantsList");
     if (p.hasVariants && p.variants && p.variants.length > 0) {
       varList.innerHTML = p.variants.map(v => `
