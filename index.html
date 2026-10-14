@@ -215,9 +215,13 @@
       <div id="detTitlesList" class="space-y-2"></div>
     </div>
 
+    <!-- VARIANTES & SKUS FÍSICOS CON BOTÓN COPIAR -->
     <div class="border-t border-slate-100 pt-3 mb-5">
-      <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Variantes & SKUs Físicos:</h4>
-      <div id="detVariantsList" class="divide-y divide-slate-100 max-h-48 overflow-y-auto"></div>
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Variantes & SKUs Físicos:</h4>
+        <span class="text-[11px] text-slate-400 font-medium">Clic para copiar</span>
+      </div>
+      <div id="detVariantsList" class="divide-y divide-slate-100 max-h-56 overflow-y-auto"></div>
     </div>
 
     <div class="flex items-center justify-between pt-3 border-t border-slate-100">
@@ -431,10 +435,9 @@
     let hasErrors = false;
     let duplicateMessages = [];
 
-    // 1. Obtener catálogo existente excluyendo el producto en edición actual
-    const existingSkusMap = new Map(); // sku -> "Producto (Variante)"
+    const existingSkusMap = new Map();
     products.forEach(p => {
-      if (p.id === editId) return; // ignorarse a sí mismo en edición
+      if (p.id === editId) return;
       if (p.hasVariants && p.variants) {
         p.variants.forEach(v => {
           if (v.sku && v.sku.trim()) {
@@ -447,7 +450,6 @@
     });
 
     if (!hasVariants) {
-      // Validar producto único
       const input = document.getElementById("pSingleSku");
       const err = document.getElementById("singleSkuError");
       const val = input.value.trim().toUpperCase();
@@ -467,16 +469,14 @@
         }
       }
     } else {
-      // Validar variantes entre sí y contra la base de datos
       const rows = document.querySelectorAll("#variantList .variant-row");
-      const currentFormSkus = new Map(); // sku -> array de inputs para detectar colisión interna
+      const currentFormSkus = new Map();
 
       rows.forEach(r => {
         const input = r.querySelector(".v-sku");
         const val = input.value.trim().toUpperCase();
         input.classList.remove("sku-duplicate");
 
-        // Quitar mensaje previo de error en la fila si existía
         const existingMsg = r.querySelector(".v-sku-err");
         if (existingMsg) existingMsg.remove();
 
@@ -486,7 +486,7 @@
         }
       });
 
-      // A) Revisar duplicados entre las variantes del mismo producto
+      // Duplicados dentro del mismo producto
       currentFormSkus.forEach((instances, sku) => {
         if (instances.length > 1) {
           hasErrors = true;
@@ -498,7 +498,7 @@
         }
       });
 
-      // B) Revisar colisión contra el resto de la base de datos
+      // Duplicados contra el resto de la base de datos
       currentFormSkus.forEach((instances, sku) => {
         if (existingSkusMap.has(sku)) {
           hasErrors = true;
@@ -512,7 +512,6 @@
       });
     }
 
-    // Actualizar estado del botón de guardado y banner de alerta
     if (hasErrors) {
       submitBtn.disabled = true;
       submitBtn.classList.add("opacity-50", "cursor-not-allowed");
@@ -540,7 +539,6 @@
   window.saveProduct = async function(e) {
     e.preventDefault();
 
-    // Verificación final estricta anti-duplicados
     const isValid = validateAllSkusLive();
     if (!isValid) {
       alert("❌ NO SE PUEDE GUARDAR: Se detectaron SKUs duplicados en el catálogo o entre variantes. Revisa las casillas marcadas en rojo.");
@@ -690,7 +688,6 @@
     validateAllSkusLive();
   };
 
-  // FILA DE VARIANTE CON LISTENER DE VALIDACIÓN ANTI-DUPLICADOS
   window.addVariantRow = function(name = "", sku = "", image = "") {
     const div = document.createElement("div");
     div.className = "variant-row flex items-center gap-2";
@@ -798,6 +795,19 @@
     });
   };
 
+  // FUNCIÓN PARA COPIAR TEXTO O SKUS CON FEEDBACK VISUAL
+  window.copySku = function(sku, el) {
+    navigator.clipboard.writeText(sku).then(() => {
+      const originalHtml = el.innerHTML;
+      el.innerHTML = `✓ Copiado`;
+      el.classList.add("bg-emerald-100", "text-emerald-800", "border-emerald-300");
+      setTimeout(() => {
+        el.innerHTML = originalHtml;
+        el.classList.remove("bg-emerald-100", "text-emerald-800", "border-emerald-300");
+      }, 1400);
+    });
+  };
+
   window.copyText = function(text, btn) {
     navigator.clipboard.writeText(text).then(() => {
       const orig = btn.innerText;
@@ -871,22 +881,29 @@
       titlesSec.classList.add("hidden");
     }
 
+    // LISTADO DE VARIANTES CON BOTÓN / CHIP CLICKEABLE PARA COPIAR SKU
     const varList = document.getElementById("detVariantsList");
     if (p.hasVariants && p.variants && p.variants.length > 0) {
       varList.innerHTML = p.variants.map(v => `
-        <div class="flex items-center justify-between py-2 px-1">
+        <div class="flex items-center justify-between py-2 px-1 hover:bg-slate-50/80 rounded-lg transition">
           <div class="flex items-center gap-2.5">
             ${v.image ? `<img src="${v.image}" class="w-8 h-8 object-contain rounded border border-slate-200 cursor-zoom-in" onclick="zoomImage('${v.image}')" />` : ''}
             <span class="text-sm font-semibold text-slate-800">${v.name}</span>
           </div>
-          <span class="text-xs font-mono font-bold bg-slate-100 text-slate-700 px-2 py-1 rounded">${v.sku}</span>
+          <button onclick="copySku('${v.sku}', this)" title="Clic para copiar este SKU" class="group flex items-center gap-1.5 text-xs font-mono font-bold bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 hover:border-blue-300 px-2.5 py-1.5 rounded-md transition shadow-2xs">
+            <span>${v.sku}</span>
+            <span class="text-[10px] opacity-60 group-hover:opacity-100">📋</span>
+          </button>
         </div>
       `).join("");
     } else {
       varList.innerHTML = `
-        <div class="flex justify-between py-2 px-1 text-sm">
+        <div class="flex justify-between items-center py-2 px-1 text-sm">
           <span class="text-slate-500">Producto Único</span>
-          <span class="font-mono font-bold bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs">${p.singleSku || 'Sin SKU'}</span>
+          <button onclick="copySku('${p.singleSku || ''}', this)" title="Clic para copiar este SKU" class="group flex items-center gap-1.5 font-mono font-bold bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 hover:border-blue-300 px-2.5 py-1.5 rounded-md text-xs transition shadow-2xs">
+            <span>${p.singleSku || 'Sin SKU'}</span>
+            <span class="text-[10px] opacity-60 group-hover:opacity-100">📋</span>
+          </button>
         </div>
       `;
     }
