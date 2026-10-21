@@ -36,7 +36,7 @@
   <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-black text-slate-900 tracking-tight">Catálogo E-commerce & Taller</h1>
-      <p class="text-sm text-slate-500">Gestión de SKUs Únicos, Tallas, Colores, Múltiples Links de Drive y Marketplaces</p>
+      <p class="text-sm text-slate-500">Gestión de SKUs Únicos, Tallas, Colores, Galería Ordenable y Drive</p>
     </div>
     <div class="flex items-center gap-3">
       <button onclick="openCreateModal()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition">
@@ -94,24 +94,32 @@
         </div>
       </div>
 
-      <!-- FOTO PRINCIPAL -->
-      <div>
-        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Foto Principal del Diseño</label>
-        <div class="flex items-center gap-2">
-          <input type="text" id="pImage" placeholder="Pega el enlace web de la foto..." oninput="previewMainImg()" class="flex-1 text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          <input type="file" id="pImageFile" accept="image/*" class="hidden" onchange="handleMainFile(this)" />
-          <button type="button" onclick="document.getElementById('pImageFile').click()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2.5 rounded-lg border border-slate-300">Subir</button>
-          <div id="mainImgThumbWrap" class="variant-thumb-container hidden">
-            <img id="mainImgPreview" src="" class="w-10 h-10 object-contain rounded border border-slate-300 bg-white cursor-pointer" onclick="zoomImage(this.src)" />
-            <span class="btn-remove-thumb" onclick="removeMainImage()" title="Quitar foto">&times;</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- MÚLTIPLES ENLACES DE GOOGLE DRIVE CON TÍTULOS IDENTIFICADORES -->
+      <!-- FOTOS PRINCIPALES ORDENABLES -->
       <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
         <div class="flex items-center justify-between">
-          <label class="block text-xs font-bold text-slate-700 uppercase">📁 Archivos de Impresión / Google Drive (Múltiples links)</label>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase">Galería de Fotos del Producto (Frente, Espalda, Detalles)</label>
+            <p class="text-[11px] text-slate-400">La primera imagen de la izquierda será la portada del catálogo.</p>
+          </div>
+          <button type="button" onclick="document.getElementById('pMultipleFiles').click()" class="bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-blue-200 flex items-center gap-1">
+            + Subir Archivos
+          </button>
+          <input type="file" id="pMultipleFiles" accept="image/*" multiple class="hidden" onchange="handleMultipleFiles(this)" />
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input type="text" id="pSingleUrlInput" placeholder="O pega un enlace web de imagen y pulsa agregar..." class="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <button type="button" onclick="addUrlToGallery()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-300">Agregar URL</button>
+        </div>
+
+        <!-- Contenedor de miniaturas con reordenamiento -->
+        <div id="galleryContainer" class="flex flex-wrap gap-2.5 pt-1 min-h-[50px] items-center"></div>
+      </div>
+
+      <!-- MÚLTIPLES ENLACES DE GOOGLE DRIVE -->
+      <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+        <div class="flex items-center justify-between">
+          <label class="block text-xs font-bold text-slate-700 uppercase">📁 Archivos de Impresión / Google Drive</label>
           <button type="button" onclick="addDriveRow()" class="text-xs font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-1">
             + Agregar enlace de Drive
           </button>
@@ -200,9 +208,13 @@
       <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
     </div>
 
+    <!-- Visor Principal con Galería de Miniaturas -->
     <div class="text-center mb-4">
-      <img id="detImg" src="" class="max-h-56 max-w-full mx-auto object-contain rounded-xl border border-slate-200 cursor-zoom-in" onclick="zoomImage(this.src)" />
-      <p class="text-[11px] text-slate-400 mt-1.5">Clic en la foto para ver en grande</p>
+      <div class="h-60 flex items-center justify-center bg-slate-50 rounded-xl border border-slate-200 overflow-hidden mb-2">
+        <img id="detImg" src="" class="max-h-56 max-w-full object-contain cursor-zoom-in" onclick="zoomImage(this.src)" />
+      </div>
+      <div id="detGalleryThumbs" class="flex items-center justify-center gap-2 overflow-x-auto py-1"></div>
+      <p class="text-[11px] text-slate-400 mt-1">Clic en la foto para ver en pantalla completa</p>
     </div>
 
     <div id="detSpecs" class="flex flex-wrap gap-1.5 justify-center mb-4"></div>
@@ -261,6 +273,7 @@
 
   let products = [];
   let currentSearch = "";
+  let currentGalleryImages = []; // Array temporal de fotos principales para el modal
 
   function compressImage(file, maxWidth = 450, quality = 0.7) {
     return new Promise((resolve) => {
@@ -339,7 +352,9 @@
 
     grid.innerHTML = filtered.map(p => {
       let matchInfo = '';
-      let displayImg = p.image || '';
+      
+      // Portada oficial: primera imagen de images[] o la propiedad heredada image
+      let displayImg = (p.images && p.images.length > 0) ? p.images[0] : (p.image || '');
 
       if (q && p.variants) {
         const foundVar = p.variants.find(v => (v.sku || '').toLowerCase().includes(q) || (v.name || '').toLowerCase().includes(q));
@@ -357,10 +372,15 @@
         ? `<span class="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">${p.variants ? p.variants.length : 0} variantes</span>`
         : `<span class="text-[11px] font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">${p.singleSku || 'Sin SKU'}</span>`;
 
+      const photosCountBadge = (p.images && p.images.length > 1) 
+        ? `<span class="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">📷 ${p.images.length}</span>` 
+        : '';
+
       return `
         <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between">
-          <div class="h-44 bg-slate-50 cursor-pointer overflow-hidden flex items-center justify-center border-b border-slate-100" onclick="openDetailModal('${p.id}')">
+          <div class="h-44 bg-slate-50 cursor-pointer overflow-hidden flex items-center justify-center border-b border-slate-100 relative" onclick="openDetailModal('${p.id}')">
             ${imgHtml}
+            ${photosCountBadge}
           </div>
           <div class="p-4 flex-1 flex flex-col justify-between">
             <div>
@@ -430,19 +450,74 @@
     }
   };
 
+  // --- GESTIÓN DE GALERÍA DE FOTOS ORDENABLES ---
+  window.renderGalleryThumbs = function() {
+    const container = document.getElementById("galleryContainer");
+    if (currentGalleryImages.length === 0) {
+      container.innerHTML = `<span class="text-xs text-slate-400 italic">No hay fotos principales cargadas.</span>`;
+      return;
+    }
+
+    container.innerHTML = currentGalleryImages.map((src, idx) => `
+      <div class="relative group bg-white border border-slate-300 rounded-lg p-1 shadow-2xs flex flex-col items-center">
+        ${idx === 0 ? '<span class="absolute -top-2 left-1 bg-blue-600 text-white text-[9px] font-bold px-1.5 py-0.2 rounded shadow-xs z-10">PORTADA</span>' : ''}
+        <img src="${src}" class="w-16 h-16 object-contain rounded cursor-pointer" onclick="zoomImage('${src}')" />
+        <div class="flex items-center justify-between w-full mt-1.5 pt-1 border-t border-slate-100 gap-1">
+          <button type="button" class="text-xs text-slate-500 hover:text-blue-600 font-bold px-1 rounded hover:bg-slate-100 disabled:opacity-20" ${idx === 0 ? 'disabled' : ''} onclick="moveGalleryImage(${idx}, -1)" title="Mover hacia la izquierda">◀</button>
+          <button type="button" class="text-xs text-red-500 hover:text-red-700 font-bold px-1 rounded hover:bg-red-50" onclick="removeGalleryImage(${idx})" title="Eliminar foto">&times;</button>
+          <button type="button" class="text-xs text-slate-500 hover:text-blue-600 font-bold px-1 rounded hover:bg-slate-100 disabled:opacity-20" ${idx === currentGalleryImages.length - 1 ? 'disabled' : ''} onclick="moveGalleryImage(${idx}, 1)" title="Mover hacia la derecha">▶</button>
+        </div>
+      </div>
+    `).join("");
+  };
+
+  window.moveGalleryImage = function(index, direction) {
+    const target = index + direction;
+    if (target < 0 || target >= currentGalleryImages.length) return;
+    const temp = currentGalleryImages[index];
+    currentGalleryImages[index] = currentGalleryImages[target];
+    currentGalleryImages[target] = temp;
+    renderGalleryThumbs();
+  };
+
+  window.removeGalleryImage = function(index) {
+    currentGalleryImages.splice(index, 1);
+    renderGalleryThumbs();
+  };
+
+  window.handleMultipleFiles = async function(input) {
+    const files = Array.from(input.files);
+    if (!files || files.length === 0) return;
+    for (const f of files) {
+      const compressed = await compressImage(f);
+      currentGalleryImages.push(compressed);
+    }
+    input.value = "";
+    renderGalleryThumbs();
+  };
+
+  window.addUrlToGallery = function() {
+    const inp = document.getElementById("pSingleUrlInput");
+    const val = inp.value.trim();
+    if (!val) return;
+    currentGalleryImages.push(val);
+    inp.value = "";
+    renderGalleryThumbs();
+  };
+
   // --- FILAS DE DRIVE PERSONALIZADAS ---
   window.addDriveRow = function(label = "", url = "") {
     const div = document.createElement("div");
     div.className = "drive-row flex items-center gap-2";
     div.innerHTML = `
-      <input type="text" class="d-label w-1/3 text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white" placeholder="Ej. DTF Negro / Parche" value="${label}" />
+      <input type="text" class="d-label w-1/3 text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white" placeholder="Ej. DTF Frente Negro / Parche" value="${label}" />
       <input type="url" class="d-url flex-1 text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white" placeholder="https://drive.google.com/..." value="${url}" />
       <button type="button" class="text-slate-400 hover:text-red-500 p-1" title="Eliminar este link" onclick="this.closest('.drive-row').remove()">🗑</button>
     `;
     document.getElementById("driveList").appendChild(div);
   };
 
-  // --- VALIDACIÓN ESTRICTA DE SKUS DUPLICADOS ---
+  // --- VALIDACIÓN DE SKUS DUPLICADOS ---
   window.validateAllSkusLive = function() {
     const editId = document.getElementById("editProductId").value;
     const hasVariants = document.getElementById("pHasVariants").checked;
@@ -504,7 +579,6 @@
         }
       });
 
-      // Duplicados dentro del mismo producto
       currentFormSkus.forEach((instances, sku) => {
         if (instances.length > 1) {
           hasErrors = true;
@@ -516,7 +590,6 @@
         }
       });
 
-      // Duplicados contra el resto de la base de datos
       currentFormSkus.forEach((instances, sku) => {
         if (existingSkusMap.has(sku)) {
           hasErrors = true;
@@ -554,6 +627,7 @@
     msg.innerText = `⚠️ ${text}`;
   }
 
+  // --- GUARDAR PRODUCTO ---
   window.saveProduct = async function(e) {
     e.preventDefault();
 
@@ -589,7 +663,6 @@
         singleSku = document.getElementById("pSingleSku").value.trim().toUpperCase();
       }
 
-      // Recopilar enlaces de Drive
       let driveLinks = [];
       const driveRows = document.querySelectorAll("#driveList .drive-row");
       driveRows.forEach(r => {
@@ -605,7 +678,8 @@
         brand: document.getElementById("pBrand").value.trim(),
         model: document.getElementById("pModel").value.trim(),
         color: document.getElementById("pColor").value.trim(),
-        image: document.getElementById("pImage").value.trim(),
+        images: currentGalleryImages,
+        image: currentGalleryImages[0] || "",
         driveLinks: driveLinks,
         ml: document.getElementById("pMl").value.trim(),
         tiktok: document.getElementById("pTiktok").value.trim(),
@@ -637,14 +711,15 @@
     document.getElementById("modalTitle").innerText = "Nuevo Producto";
     document.getElementById("editProductId").value = "";
     document.getElementById("productForm").reset();
-    document.getElementById("mainImgThumbWrap").classList.add("hidden");
     document.getElementById("variantList").innerHTML = "";
     document.getElementById("driveList").innerHTML = "";
     document.getElementById("pHasVariants").checked = true;
     document.getElementById("skuGlobalAlert").classList.add("hidden");
     toggleVariantMode();
 
-    // Iniciar con un campo de drive
+    currentGalleryImages = [];
+    renderGalleryThumbs();
+
     addDriveRow("Diseño General / DTF", "");
 
     document.getElementById("customTitlesWrap").classList.add("hidden");
@@ -669,7 +744,6 @@
     document.getElementById("pBrand").value = p.brand || "";
     document.getElementById("pModel").value = p.model || "";
     document.getElementById("pColor").value = p.color || "";
-    document.getElementById("pImage").value = p.image || "";
     document.getElementById("pMl").value = p.ml || "";
     document.getElementById("pTiktok").value = p.tiktok || "";
     document.getElementById("pAmazon").value = p.amazon || "";
@@ -678,7 +752,15 @@
     document.getElementById("pTitleTiktok").value = p.titleTiktok || "";
     document.getElementById("pTitleAmazon").value = p.titleAmazon || "";
 
-    // Cargar enlaces de Drive (soporta driveLinks nuevos o driveUrl antiguo)
+    // Cargar galería de imágenes ordenables
+    currentGalleryImages = [];
+    if (p.images && p.images.length > 0) {
+      currentGalleryImages = [...p.images];
+    } else if (p.image) {
+      currentGalleryImages = [p.image];
+    }
+    renderGalleryThumbs();
+
     document.getElementById("driveList").innerHTML = "";
     if (p.driveLinks && p.driveLinks.length > 0) {
       p.driveLinks.forEach(d => addDriveRow(d.label, d.url));
@@ -695,8 +777,6 @@
       document.getElementById("customTitlesWrap").classList.add("hidden");
       document.getElementById("customTitlesToggleIcon").innerText = "▼";
     }
-
-    previewMainImg();
 
     document.getElementById("pHasVariants").checked = p.hasVariants;
     toggleVariantMode();
@@ -795,36 +875,10 @@
     wrap.classList.remove("hidden");
   };
 
-  window.removeMainImage = function() {
-    document.getElementById("pImage").value = "";
-    document.getElementById("pImageFile").value = "";
-    previewMainImg();
-  };
-
-  window.previewMainImg = function() {
-    const val = document.getElementById("pImage").value.trim();
-    const wrap = document.getElementById("mainImgThumbWrap");
-    const prev = document.getElementById("mainImgPreview");
-    if (val) {
-      prev.src = val;
-      wrap.classList.remove("hidden");
-    } else {
-      wrap.classList.add("hidden");
-    }
-  };
-
-  window.handleMainFile = async function(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const compressed = await compressImage(file);
-    document.getElementById("pImage").value = compressed;
-    previewMainImg();
-  };
-
   window.copyMainImageToVariants = function() {
-    const mainImg = document.getElementById("pImage").value.trim();
+    const mainImg = currentGalleryImages[0] || "";
     if (!mainImg) {
-      alert("Primero asigna o sube una imagen principal.");
+      alert("Primero sube o agrega al menos una imagen a la galería.");
       return;
     }
     const rows = document.querySelectorAll("#variantList .variant-row");
@@ -837,7 +891,7 @@
     });
   };
 
-  // COPIAR SKUS DIRECTO AL PORTAPAPELES
+  // COPIAR SKUS AL PORTAPAPELES
   window.copySku = function(sku, el) {
     navigator.clipboard.writeText(sku).then(() => {
       const originalHtml = el.innerHTML;
@@ -868,7 +922,28 @@
     if (!p) return;
 
     document.getElementById("detName").innerText = p.name;
-    document.getElementById("detImg").src = p.image || "https://via.placeholder.com/400x300?text=Sin+Foto";
+
+    // Renderizar fotos de galería en detalle
+    const imgs = (p.images && p.images.length > 0) ? p.images : (p.image ? [p.image] : []);
+    const mainDetImg = document.getElementById("detImg");
+    const thumbsContainer = document.getElementById("detGalleryThumbs");
+
+    if (imgs.length > 0) {
+      mainDetImg.src = imgs[0];
+      if (imgs.length > 1) {
+        thumbsContainer.innerHTML = imgs.map((src, i) => `
+          <img src="${src}" class="w-10 h-10 object-contain rounded border ${i === 0 ? 'border-blue-600 ring-2 ring-blue-400' : 'border-slate-200'} cursor-pointer bg-white" onclick="changeDetailMainImg('${src}', this)" />
+        `).join("");
+        thumbsContainer.classList.remove("hidden");
+      } else {
+        thumbsContainer.innerHTML = "";
+        thumbsContainer.classList.add("hidden");
+      }
+    } else {
+      mainDetImg.src = "https://via.placeholder.com/400x300?text=Sin+Foto";
+      thumbsContainer.innerHTML = "";
+      thumbsContainer.classList.add("hidden");
+    }
 
     document.getElementById("detSpecs").innerHTML = `
       ${p.brand ? `<span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-medium">${p.brand}</span>` : ''}
@@ -876,12 +951,11 @@
       ${p.color ? `<span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-medium">${p.color}</span>` : ''}
     `;
 
-    // Renderizar lista de enlaces de Google Drive con sus títulos
+    // Renderizar lista de enlaces de Drive
     const driveContainer = document.getElementById("detDriveList");
     const noDrive = document.getElementById("detNoDrive");
     let links = p.driveLinks || [];
     
-    // Retrocompatibilidad por si tiene driveUrl viejo
     if (links.length === 0 && p.driveUrl) {
       links = [{ label: "Archivos de Impresión", url: p.driveUrl }];
     }
@@ -938,7 +1012,7 @@
       titlesSec.classList.add("hidden");
     }
 
-    // Variantes con botón para copiar SKU
+    // Variantes
     const varList = document.getElementById("detVariantsList");
     if (p.hasVariants && p.variants && p.variants.length > 0) {
       varList.innerHTML = p.variants.map(v => `
@@ -968,6 +1042,13 @@
     document.getElementById("detDeleteBtn").onclick = () => deleteProduct(p.id);
     document.getElementById("detailModal").classList.remove("hidden");
     document.getElementById("detailModal").classList.add("flex");
+  };
+
+  window.changeDetailMainImg = function(src, thumbEl) {
+    document.getElementById("detImg").src = src;
+    const thumbs = document.querySelectorAll("#detGalleryThumbs img");
+    thumbs.forEach(t => t.className = "w-10 h-10 object-contain rounded border border-slate-200 cursor-pointer bg-white");
+    thumbEl.className = "w-10 h-10 object-contain rounded border border-blue-600 ring-2 ring-blue-400 cursor-pointer bg-white";
   };
 
   window.closeDetailModal = function() {
