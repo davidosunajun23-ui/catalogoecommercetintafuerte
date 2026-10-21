@@ -36,7 +36,7 @@
   <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-black text-slate-900 tracking-tight">Catálogo E-commerce & Taller</h1>
-      <p class="text-sm text-slate-500">Gestión de SKUs Únicos, Tallas, Colores, Títulos por Marketplace y Drive</p>
+      <p class="text-sm text-slate-500">Gestión de SKUs Únicos, Tallas, Colores, Múltiples Links de Drive y Marketplaces</p>
     </div>
     <div class="flex items-center gap-3">
       <button onclick="openCreateModal()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition">
@@ -59,16 +59,16 @@
 
 <!-- MODAL CREAR / EDITAR PRODUCTO -->
 <div id="productModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4 overflow-y-auto">
-  <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
+  <div class="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl my-8 max-h-[92vh] overflow-y-auto">
     <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
       <h3 id="modalTitle" class="text-lg font-bold text-slate-900">Nuevo Producto</h3>
       <button onclick="closeProductModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
     </div>
 
-    <!-- BANNER DE ALERTA GLOBAL DE SKU DUPLICADO -->
+    <!-- BANNER ALERTA SKU DUPLICADO -->
     <div id="skuGlobalAlert" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-semibold flex items-center gap-2">
       <span class="text-base">⚠️</span>
-      <span id="skuGlobalAlertText">Hay uno o más SKUs duplicados en el formulario. Corrige los campos marcados en rojo antes de guardar.</span>
+      <span id="skuGlobalAlertText">Hay uno o más SKUs duplicados. Corrígelos antes de guardar.</span>
     </div>
 
     <form id="productForm" onsubmit="saveProduct(event)" class="space-y-4">
@@ -76,7 +76,7 @@
 
       <div>
         <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre Comercial del Diseño *</label>
-        <input type="text" id="pName" required placeholder="Ej. Playera Newjeans Hyein Bunnies" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <input type="text" id="pName" required placeholder="Ej. Hoodie Olivia Rodrigo" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
 
       <div class="grid grid-cols-3 gap-3">
@@ -108,10 +108,15 @@
         </div>
       </div>
 
-      <!-- DRIVE -->
-      <div>
-        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Enlace a Google Drive (Archivos de Impresión / DTF / Parche)</label>
-        <input type="url" id="pDrive" placeholder="https://drive.google.com/..." class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <!-- MÚLTIPLES ENLACES DE GOOGLE DRIVE CON TÍTULOS IDENTIFICADORES -->
+      <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+        <div class="flex items-center justify-between">
+          <label class="block text-xs font-bold text-slate-700 uppercase">📁 Archivos de Impresión / Google Drive (Múltiples links)</label>
+          <button type="button" onclick="addDriveRow()" class="text-xs font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-1">
+            + Agregar enlace de Drive
+          </button>
+        </div>
+        <div id="driveList" class="space-y-2"></div>
       </div>
 
       <!-- ENLACES DE MARKETPLACES -->
@@ -130,23 +135,23 @@
         </div>
       </div>
 
-      <!-- SECCIÓN: TÍTULOS ESPECÍFICOS POR PLATAFORMA -->
+      <!-- SECCIÓN: TÍTULOS POR PLATAFORMA -->
       <div class="pt-2">
         <button type="button" onclick="toggleCustomTitles()" class="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1">
           <span id="customTitlesToggleIcon">▼</span> Títulos personalizados por plataforma (ML, TikTok, Amazon)
         </button>
-        <div id="customTitlesWrap" class="mt-2.5 p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+        <div id="customTitlesWrap" class="mt-2.5 p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3 hidden">
           <div>
             <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Título exacto en Mercado Libre</label>
-            <input type="text" id="pTitleMl" placeholder="Título publicado en Mercado Libre..." class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="text" id="pTitleMl" placeholder="Título en Mercado Libre..." class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
             <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Título exacto en TikTok Shop</label>
-            <input type="text" id="pTitleTiktok" placeholder="Título publicado en TikTok Shop..." class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="text" id="pTitleTiktok" placeholder="Título en TikTok Shop..." class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
             <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Título exacto en Amazon</label>
-            <input type="text" id="pTitleAmazon" placeholder="Título publicado en Amazon..." class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="text" id="pTitleAmazon" placeholder="Título en Amazon..." class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
         </div>
       </div>
@@ -202,11 +207,11 @@
 
     <div id="detSpecs" class="flex flex-wrap gap-1.5 justify-center mb-4"></div>
 
+    <!-- SECCIÓN MULTI-DRIVE EN DETALLE -->
     <div class="mb-4">
-      <a id="detDriveBtn" href="#" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition">
-        📁 Abrir Archivos en Google Drive
-      </a>
-      <p id="detNoDrive" class="text-xs text-slate-400 text-center hidden">Sin enlace de Drive registrado</p>
+      <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Archivos de Impresión / Drive:</h4>
+      <div id="detDriveList" class="space-y-1.5"></div>
+      <p id="detNoDrive" class="text-xs text-slate-400 text-center py-2 bg-slate-50 rounded-lg hidden">Sin enlaces de Drive registrados</p>
     </div>
 
     <!-- TÍTULOS EN MARKETPLACES EN LA FICHA -->
@@ -289,7 +294,7 @@
     });
   }
 
-  // Firestore Snapshot en tiempo real
+  // Snapshot de Firestore en tiempo real
   onSnapshot(colRef, (snapshot) => {
     products = [];
     snapshot.forEach(docSnap => {
@@ -323,7 +328,8 @@
         (v.name || '').toLowerCase().includes(q) || 
         (v.sku || '').toLowerCase().includes(q)
       );
-      return matchParent || matchVariant;
+      const matchDrive = p.driveLinks?.some(d => (d.label || '').toLowerCase().includes(q));
+      return matchParent || matchVariant || matchDrive;
     });
 
     if (filtered.length === 0) {
@@ -424,7 +430,19 @@
     }
   };
 
-  // --- MOTOR DE VALIDACIÓN ESTRICTA DE SKUS DUPLICADOS ---
+  // --- FILAS DE DRIVE PERSONALIZADAS ---
+  window.addDriveRow = function(label = "", url = "") {
+    const div = document.createElement("div");
+    div.className = "drive-row flex items-center gap-2";
+    div.innerHTML = `
+      <input type="text" class="d-label w-1/3 text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white" placeholder="Ej. DTF Negro / Parche" value="${label}" />
+      <input type="url" class="d-url flex-1 text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white" placeholder="https://drive.google.com/..." value="${url}" />
+      <button type="button" class="text-slate-400 hover:text-red-500 p-1" title="Eliminar este link" onclick="this.closest('.drive-row').remove()">🗑</button>
+    `;
+    document.getElementById("driveList").appendChild(div);
+  };
+
+  // --- VALIDACIÓN ESTRICTA DE SKUS DUPLICADOS ---
   window.validateAllSkusLive = function() {
     const editId = document.getElementById("editProductId").value;
     const hasVariants = document.getElementById("pHasVariants").checked;
@@ -541,7 +559,7 @@
 
     const isValid = validateAllSkusLive();
     if (!isValid) {
-      alert("❌ NO SE PUEDE GUARDAR: Se detectaron SKUs duplicados en el catálogo o entre variantes. Revisa las casillas marcadas en rojo.");
+      alert("❌ NO SE PUEDE GUARDAR: Se detectaron SKUs duplicados. Revisa las casillas en rojo.");
       const firstErr = document.querySelector(".sku-duplicate");
       if (firstErr) firstErr.focus();
       return;
@@ -571,13 +589,24 @@
         singleSku = document.getElementById("pSingleSku").value.trim().toUpperCase();
       }
 
+      // Recopilar enlaces de Drive
+      let driveLinks = [];
+      const driveRows = document.querySelectorAll("#driveList .drive-row");
+      driveRows.forEach(r => {
+        const label = r.querySelector(".d-label").value.trim();
+        const url = r.querySelector(".d-url").value.trim();
+        if (url) {
+          driveLinks.push({ label: label || "Archivo de Impresión", url: url });
+        }
+      });
+
       const data = {
         name: document.getElementById("pName").value.trim(),
         brand: document.getElementById("pBrand").value.trim(),
         model: document.getElementById("pModel").value.trim(),
         color: document.getElementById("pColor").value.trim(),
         image: document.getElementById("pImage").value.trim(),
-        driveUrl: document.getElementById("pDrive").value.trim(),
+        driveLinks: driveLinks,
         ml: document.getElementById("pMl").value.trim(),
         tiktok: document.getElementById("pTiktok").value.trim(),
         amazon: document.getElementById("pAmazon").value.trim(),
@@ -610,9 +639,13 @@
     document.getElementById("productForm").reset();
     document.getElementById("mainImgThumbWrap").classList.add("hidden");
     document.getElementById("variantList").innerHTML = "";
+    document.getElementById("driveList").innerHTML = "";
     document.getElementById("pHasVariants").checked = true;
     document.getElementById("skuGlobalAlert").classList.add("hidden");
     toggleVariantMode();
+
+    // Iniciar con un campo de drive
+    addDriveRow("Diseño General / DTF", "");
 
     document.getElementById("customTitlesWrap").classList.add("hidden");
     document.getElementById("customTitlesToggleIcon").innerText = "▼";
@@ -637,7 +670,6 @@
     document.getElementById("pModel").value = p.model || "";
     document.getElementById("pColor").value = p.color || "";
     document.getElementById("pImage").value = p.image || "";
-    document.getElementById("pDrive").value = p.driveUrl || "";
     document.getElementById("pMl").value = p.ml || "";
     document.getElementById("pTiktok").value = p.tiktok || "";
     document.getElementById("pAmazon").value = p.amazon || "";
@@ -645,6 +677,16 @@
     document.getElementById("pTitleMl").value = p.titleMl || "";
     document.getElementById("pTitleTiktok").value = p.titleTiktok || "";
     document.getElementById("pTitleAmazon").value = p.titleAmazon || "";
+
+    // Cargar enlaces de Drive (soporta driveLinks nuevos o driveUrl antiguo)
+    document.getElementById("driveList").innerHTML = "";
+    if (p.driveLinks && p.driveLinks.length > 0) {
+      p.driveLinks.forEach(d => addDriveRow(d.label, d.url));
+    } else if (p.driveUrl) {
+      addDriveRow("Archivo General", p.driveUrl);
+    } else {
+      addDriveRow("Diseño General / DTF", "");
+    }
 
     if (p.titleMl || p.titleTiktok || p.titleAmazon) {
       document.getElementById("customTitlesWrap").classList.remove("hidden");
@@ -795,7 +837,7 @@
     });
   };
 
-  // FUNCIÓN PARA COPIAR TEXTO O SKUS CON FEEDBACK VISUAL
+  // COPIAR SKUS DIRECTO AL PORTAPAPELES
   window.copySku = function(sku, el) {
     navigator.clipboard.writeText(sku).then(() => {
       const originalHtml = el.innerHTML;
@@ -834,17 +876,32 @@
       ${p.color ? `<span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-medium">${p.color}</span>` : ''}
     `;
 
-    const driveBtn = document.getElementById("detDriveBtn");
+    // Renderizar lista de enlaces de Google Drive con sus títulos
+    const driveContainer = document.getElementById("detDriveList");
     const noDrive = document.getElementById("detNoDrive");
-    if (p.driveUrl) {
-      driveBtn.href = p.driveUrl;
-      driveBtn.style.display = "flex";
-      noDrive.style.display = "none";
-    } else {
-      driveBtn.style.display = "none";
-      noDrive.style.display = "block";
+    let links = p.driveLinks || [];
+    
+    // Retrocompatibilidad por si tiene driveUrl viejo
+    if (links.length === 0 && p.driveUrl) {
+      links = [{ label: "Archivos de Impresión", url: p.driveUrl }];
     }
 
+    if (links.length > 0) {
+      driveContainer.innerHTML = links.map(d => `
+        <a href="${d.url}" target="_blank" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold text-xs py-2 px-3 rounded-xl flex items-center justify-between shadow-2xs transition">
+          <span class="truncate">📁 ${d.label}</span>
+          <span class="text-[10px] bg-emerald-600 text-white font-bold px-2 py-0.5 rounded-md ml-2 shrink-0">Abrir Drive ↗</span>
+        </a>
+      `).join("");
+      driveContainer.classList.remove("hidden");
+      noDrive.classList.add("hidden");
+    } else {
+      driveContainer.innerHTML = "";
+      driveContainer.classList.add("hidden");
+      noDrive.classList.remove("hidden");
+    }
+
+    // Títulos de plataformas
     const titlesSec = document.getElementById("detTitlesSection");
     const titlesList = document.getElementById("detTitlesList");
     let titlesHtml = "";
@@ -881,7 +938,7 @@
       titlesSec.classList.add("hidden");
     }
 
-    // LISTADO DE VARIANTES CON BOTÓN / CHIP CLICKEABLE PARA COPIAR SKU
+    // Variantes con botón para copiar SKU
     const varList = document.getElementById("detVariantsList");
     if (p.hasVariants && p.variants && p.variants.length > 0) {
       varList.innerHTML = p.variants.map(v => `
